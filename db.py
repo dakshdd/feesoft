@@ -10,7 +10,7 @@ try:
 
     # --- School DB ---
     school_db = client["school_db"]
-    master = school_db["master"]
+    master_collection = school_db["master"]
     counters = school_db["counters"]
 
     # --- Transport DB ---
