@@ -14,8 +14,12 @@ master_bp = Blueprint("master_bp", __name__)
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
+# ------------------ MongoDB Connection ------------------
+MONGO_URI = os.environ.get("MONGO_URI")
+
+client = MongoClient(MONGO_URI)
+
 # --- School DB connection ---
-client = MongoClient("mongodb://dakshd:Dhanjal01@localhost:27017/school_db")
 db = client["school_db"]
 master = db["master"]
 counters = db["counters"]

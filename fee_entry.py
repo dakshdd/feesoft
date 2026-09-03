@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
 from pymongo import MongoClient
 import datetime
@@ -6,25 +7,28 @@ import datetime
 fee_entry_bp = Blueprint("fee_entry_bp", __name__)
 
 # ------------------ MongoDB Connections ------------------
-client = MongoClient("mongodb://dakshd:Dhanjal01@localhost:27017/school_db")
+MONGO_URI = os.environ.get("MONGO_URI")
+
+client = MongoClient(MONGO_URI)
 school_db = client["school_db"]
 master_col = school_db["master"]
 
-tran_client = MongoClient("mongodb://dakshdd:Dhanjal99@localhost:27017/tran")
-tran_db = tran_client["tran"]
+tran_db = client["tran"]   # same cluster, different DB
 tran_col = tran_db["transactions"]
 
 tran_col.create_index([("adm_code", 1), ("month", 1)], unique=True)
-
 # ------------------ HTML Routes ------------------
+
 
 @fee_entry_bp.route("/home")
 def fee_home():
     return redirect(url_for("fee_entry_bp.fee_entry"))
 
+
 @fee_entry_bp.route("/", methods=["GET"])
 def fee_entry():
     return render_template("fee_entry.html")
+
 
 @fee_entry_bp.route("/autocomplete")
 def autocomplete():
@@ -50,6 +54,7 @@ def autocomplete():
             })
     return jsonify(results)
 
+
 @fee_entry_bp.route("/details")
 def student_details():
     adm_code = request.args.get("adm_code")
@@ -65,6 +70,7 @@ def student_details():
         "paid_fee": r.get("paid_fee", 0),
         "balance_fee": r.get("balance_fee", r.get("total_fee", 0))
     })
+
 
 @fee_entry_bp.route("/month_total")
 def month_total():
@@ -85,17 +91,17 @@ def month_total():
 
     if month == "April":
         total = (
-                student.get("admission_fee", 0) +
-                student.get("annual_fee", 0) +
-                devl_monthly + eclass_monthly + science_monthly +
-                computer_monthly + kgarten_monthly +
-                tuition_monthly + transport_monthly
+            student.get("admission_fee", 0) +
+            student.get("annual_fee", 0) +
+            devl_monthly + eclass_monthly + science_monthly +
+            computer_monthly + kgarten_monthly +
+            tuition_monthly + transport_monthly
         )
     else:
         total = (
-                devl_monthly + eclass_monthly + science_monthly +
-                computer_monthly + kgarten_monthly +
-                tuition_monthly + transport_monthly
+            devl_monthly + eclass_monthly + science_monthly +
+            computer_monthly + kgarten_monthly +
+            tuition_monthly + transport_monthly
         )
 
     trans = tran_col.find_one({"adm_code": adm_code, "month": month})
@@ -103,6 +109,7 @@ def month_total():
     balance = total - paid
 
     return jsonify({"month": month, "total": total, "paid": paid, "balance": balance})
+
 
 @fee_entry_bp.route("/receive", methods=["POST"])
 def receive_payment():
@@ -119,8 +126,8 @@ def receive_payment():
 
     # Auto-pick next unpaid month if not provided
     if not month:
-        months = ["April","May","June","July","August","September",
-                  "October","November","December","January","February","March"]
+        months = ["April", "May", "June", "July", "August", "September",
+                  "October", "November", "December", "January", "February", "March"]
         trans = tran_col.find({"adm_code": adm_code}, {"month": 1})
         paid_months = [t.get("month") for t in trans if t.get("month")]
         for m in months:
@@ -185,14 +192,15 @@ def receive_payment():
                            paid=round(amount, 2),
                            balance=round(new_balance, 2))
 
+
 @fee_entry_bp.route("/next_month")
 def next_month():
     adm_code = request.args.get("adm_code")
     if not adm_code:
         return jsonify({"error": "Admission code required"}), 400
 
-    months = ["April","May","June","July","August","September",
-              "October","November","December","January","February","March"]
+    months = ["April", "May", "June", "July", "August", "September",
+              "October", "November", "December", "January", "February", "March"]
 
     trans = tran_col.find({"adm_code": adm_code}, {"month": 1})
     paid_months = [t.get("month") for t in trans if t.get("month")]
@@ -206,6 +214,7 @@ def next_month():
     return jsonify({"next_month": next_month, "paid_months": paid_months})
 
 # ------------------ API Routes ------------------
+
 
 @fee_entry_bp.route("/api/details/<adm_code>", methods=["GET"])
 def api_student_details(adm_code):

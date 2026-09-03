@@ -1,9 +1,13 @@
+import os
 from flask import Blueprint, render_template, request
 from pymongo import MongoClient
 
 defaulter_bp = Blueprint("defaulter_bp", __name__)
+# ------------------ MongoDB Connection ------------------
+MONGO_URI = os.environ.get("MONGO_URI")
 
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
+
 db = client["school_db"]
 master_col = db["master"]
 

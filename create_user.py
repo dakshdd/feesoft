@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, session
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash
@@ -7,8 +8,12 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"   # change this in production
 app.permanent_session_lifetime = timedelta(minutes=30)
 
-# MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")
+# ------------------ MongoDB Connection ------------------
+MONGO_URI = os.environ.get("MONGO_URI")
+
+client = MongoClient(MONGO_URI)
+
+# --- Users DB connection ---
 users_db = client["users_name"]
 users_col = users_db["users"]
 

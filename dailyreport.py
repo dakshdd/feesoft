@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request, render_template_string
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -5,11 +6,11 @@ from datetime import datetime, timedelta
 # ------------------ Blueprint Setup ------------------
 dailyreport_bp = Blueprint("dailyreport_bp", __name__)
 
-# ✅ MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")
+# ------------------ MongoDB Connection ------------------
+MONGO_URI = os.environ.get("MONGO_URI")
+client = MongoClient(MONGO_URI)
 db = client["tran"]   # database name
 tran_collection = db["transactions"]   # collection name
-
 # ------------------ Base Layout ------------------
 base_layout = """
 <!DOCTYPE html>
