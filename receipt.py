@@ -3,7 +3,7 @@ from flask import Blueprint, request, render_template, render_template_string
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from markupsafe import escape
-from db import master_collection, counters, transport_collection, tran_collection
+from db import master_collection, counters_collection, transport_collection, tran_collection
 
 # ------------------ Blueprint Setup ------------------
 receipt_bp = Blueprint("receipt_bp", __name__)
