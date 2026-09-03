@@ -2,32 +2,10 @@ import os
 from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
 from pymongo import MongoClient, errors
 import datetime
+from db import master, counters, transport_collection, tran_collection, users_collection, tran_col, master_col
 
 # ------------------ Blueprint Setup ------------------
 fee_entry_bp = Blueprint("fee_entry_bp", __name__)
-
-# ------------------ MongoDB Connections ------------------
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-
-try:
-    # Atlas ke liye TLS enable karo
-    client = MongoClient(MONGO_URI, tls=True)
-
-    # --- School DB ---
-    school_db = client["school_db"]
-    master_col = school_db["master"]
-
-    # --- Transactions DB ---
-    tran_db = client["tran"]
-    tran_col = tran_db["transactions"]
-
-    # Index create karo (safe check ke saath)
-    tran_col.create_index([("adm_code", 1), ("month", 1)], unique=True)
-
-except errors.ServerSelectionTimeoutError as e:
-    print(f"❌ MongoDB connection failed: {e}")
-    master_col, tran_col = None, None
-
 # ------------------ HTML Routes ------------------
 
 

@@ -2,15 +2,11 @@
 import os
 from flask import Blueprint, request, render_template_string
 from pymongo import MongoClient
+from db import master_collection
+
 
 # ------------------ Blueprint Setup ------------------
 classrpt_bp = Blueprint("classrpt_bp", __name__)
-
-# ------------------ MongoDB Connection ------------------
-MONGO_URI = os.environ.get("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client["school_db"]
-master_collection = db["master"]
 
 # ------------------ Templates ------------------
 

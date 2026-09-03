@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
+from db import master, counters, transport_collection, tran_collection, users_collection
 
 # ------------------ Import Blueprints ------------------
 from classrpt import classrpt_bp
@@ -18,11 +19,6 @@ from app import master_bp   # Admission Entry blueprint
 from marks_entry import marks_entry_bp
 from report_card import report_card_bp
 
-# ------------------ MongoDB Setup ------------------
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
-client = MongoClient(MONGO_URI)
-db = client["school_db"]
-users_collection = db["users"]
 
 # ------------------ Flask Setup ------------------
 app = Flask(__name__)

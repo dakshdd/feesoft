@@ -8,6 +8,7 @@ from flask import Blueprint, Flask, request, render_template_string, redirect, u
 from pymongo import MongoClient, ASCENDING, ReturnDocument, errors
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
+from db import master, counters, transport_collection, tran_collection
 
 # ------------------ Blueprint Setup ------------------
 master_bp = Blueprint("master_bp", __name__)
@@ -15,26 +16,6 @@ master_bp = Blueprint("master_bp", __name__)
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
-
-# ------------------ MongoDB Connection ------------------
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-
-try:
-    # Atlas ke liye TLS enable karo
-    client = MongoClient(MONGO_URI, tls=True)
-
-    # --- School DB connection ---
-    school_db = client["school_db"]
-    master = school_db["master"]
-    counters = school_db["counters"]
-
-    # --- Transport DB connection ---
-    transport_db = client["transport_db"]
-    transport_collection = transport_db["stand_name"]
-
-except errors.ServerSelectionTimeoutError as e:
-    print(f"❌ MongoDB connection failed: {e}")
-    master, counters, transport_collection = None, None, None
 
 # Ensure counter exists
 if counters.count_documents({"_id": "adm_code"}) == 0:

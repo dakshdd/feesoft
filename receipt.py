@@ -3,16 +3,10 @@ from flask import Blueprint, request, render_template, render_template_string
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from markupsafe import escape
+from db import master, counters, transport_collection, tran_collection
 
 # ------------------ Blueprint Setup ------------------
 receipt_bp = Blueprint("receipt_bp", __name__)
-
-# ------------------ MongoDB Connection ------------------
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-
-client = MongoClient(MONGO_URI)
-db = client["tran"]   # database name
-tran_collection = db["transactions"]   # collection name
 
 # ------------------ Base Layout ------------------
 base_layout = """
