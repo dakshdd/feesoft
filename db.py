@@ -21,6 +21,8 @@ try:
     tran_db = client["tran"]
     tran_collection = tran_db["transactions"]
 
+    users_collection = school_db["users"]
+
     # Index creation safe check
     try:
         tran_collection.create_index(
