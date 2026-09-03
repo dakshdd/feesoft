@@ -1,16 +1,28 @@
 import os
 from flask import Blueprint, request, render_template_string
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 from datetime import datetime, timedelta
 
 # ------------------ Blueprint Setup ------------------
 dailyreport_bp = Blueprint("dailyreport_bp", __name__)
 
 # ------------------ MongoDB Connection ------------------
-MONGO_URI = os.environ.get("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client["tran"]   # database name
-tran_collection = db["transactions"]   # collection name
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+
+try:
+    # TLS enable karo (Atlas ke liye zaroori)
+    client = MongoClient(MONGO_URI, tls=True)
+
+    db = client["tran"]   # database name
+    tran_collection = db["transactions"]   # collection name
+
+    # Index create karo (safe check ke saath)
+    tran_collection.create_index([("adm_code", 1), ("month", 1)], unique=True)
+
+except errors.ServerSelectionTimeoutError as e:
+    print(f"❌ MongoDB connection failed: {e}")
+    tran_collection = None
+
 # ------------------ Base Layout ------------------
 base_layout = """
 <!DOCTYPE html>
