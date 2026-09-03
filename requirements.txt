@@ -1,6 +1,4 @@
-Flask==3.0.0
+Flask==2.3.2
 gunicorn==21.2.0
-opencv-python
-face-recognition
-pymongo
-werkzeug
+pymongo==4.6.1
+dnspython==2.8.0
