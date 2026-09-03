@@ -1,0 +1,35 @@
+name: feesoft
+description: "School Dashboard Flutter Project"
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.19.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+  http: ^0.13.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  test: ^1.24.0
+  flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  andriod: true
+  ios: true
+  image_path: "assets/images/schp.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+     - assets/images/school.jpg
+     - assets/images/dd.gif
+     - assets/images/sch.jpg

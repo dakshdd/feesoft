@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Defaulter Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: center;
+        }
+
+        th {
+            background: #2575fc;
+            color: #fff;
+            font-size: 15px;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        tr:hover {
+            background: #eaf3ff;
+        }
+
+        .summary {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #444;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>
+        Defaulter Report -
+        {% if class_name %}Class {{ class_name }}{% endif %}
+        {% if section %} Section {{ section }}{% endif %}
+        ({{ month }})
+    </h2>
+
+    <table>
+        <tr>
+            <th>Adm Code</th>
+            <th>Name</th>
+            <th>Father</th>
+            <th>Balance Fee</th>
+        </tr>
+        {% for s in defaulters %}
+        <tr>
+            <td>{{ s.adm_code }}</td>
+            <td>{{ s.student_name }}</td>
+            <td>{{ s.father_name }}</td>
+            <td>₹{{ s.balance_fee }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="summary">
+        Total Defaulters: {{ total_defaulters }} | Total Balance: ₹{{ total_balance }}
+    </div>
+</body>
+
+</html>

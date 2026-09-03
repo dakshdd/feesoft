@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Fee Receipt</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 20px;
+      background: #fff;
+    }
+
+    .card {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .header img {
+      width: 100px;
+      height: auto;
+    }
+
+    .header h2 {
+      flex: 1;
+      text-align: center;
+      margin: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    .no-print {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <!-- ✅ Logo Left + Title Center -->
+    <div class="header">
+      <img src="/static/images/logo1.jpg" alt="School Logo">
+      <h2>Fee Receipt</h2>
+    </div>
+    <p><strong>Receipt No:</strong> {{ receipt_no }}</p>
+    <p><strong>Admission Code:</strong> {{ adm_code }} | <strong>Student Name:</strong> {{ student_name }}</p>
+    <p><strong>Class:</strong> {{ student_class }} <strong>Section:</strong> {{ section }}</p>
+    <p><strong>Father's Name:</strong> {{ father_name }}</p>
+    <p><strong>Date:</strong> {{ date }} | <strong>Month:</strong> {{ month }} | <strong>Payment Mode:</strong> {{
+      payment_mode }}</p>
+
+    <table>
+      <tr>
+        <th>Head</th>
+        <th>Amount</th>
+      </tr>
+
+      {% if month == "April" and admission_fee > 0 %}
+      <tr>
+        <td>Admission Fee</td>
+        <td>{{ "%.2f"|format(admission_fee) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if month == "April" and annual_fee > 0 %}
+      <tr>
+        <td>Annual Fee</td>
+        <td>{{ "%.2f"|format(annual_fee) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if tuition_fee > 0 %}
+      <tr>
+        <td>Tuition Fee</td>
+        <td>{{ "%.2f"|format(tuition_fee) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if transport_fee > 0 %}
+      <tr>
+        <td>Transport Fee</td>
+        <td>{{ "%.2f"|format(transport_fee) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if devl_fee > 0 %}
+      <tr>
+        <td>Development Fee</td>
+        <td>{{ "%.2f"|format(devl_fee) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if eclass > 0 %}
+      <tr>
+        <td>E-Class Fee</td>
+        <td>{{ "%.2f"|format(eclass) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if science > 0 %}
+      <tr>
+        <td>Science Fee</td>
+        <td>{{ "%.2f"|format(science) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if computer > 0 %}
+      <tr>
+        <td>Computer Fee</td>
+        <td>{{ "%.2f"|format(computer) }}</td>
+      </tr>
+      {% endif %}
+
+      {% if kgarten > 0 %}
+      <tr>
+        <td>K.Garten Fee</td>
+        <td>{{ "%.2f"|format(kgarten) }}</td>
+      </tr>
+      {% endif %}
+
+      <tr>
+        <td><strong>Paid</strong></td>
+        <td>{{ "%.2f"|format(paid) }}</td>
+      </tr>
+      <tr>
+        <td><strong>Balance</strong></td>
+        <td>{{ "%.2f"|format(balance) }}</td>
+      </tr>
+      <tr>
+        <td>Remark</td>
+        <td>{{ remark }}</td>
+      </tr>
+    </table>
+
+    <p style="text-align:right; margin-top:20px;">CASHIER SIGNATURE</p>
+    <button class="no-print" onclick="window.print()">Print Receipt</button>
+  </div>
+</body>
+
+</html>

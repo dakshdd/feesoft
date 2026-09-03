@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daksh D Technologies</title>
+  <!-- Link external CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header id="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Daksh D Technologies Logo" />
+      <h1>Daksh D Technologies</h1>
+    </div>
+    <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+    <nav id="menu">
+      <a href="#about">About</a>
+      <a href="#services">Solutions</a>
+      <a href="#vision">Vision</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#contact">Contact</a>
+      <a href="{{ url_for('login') }}">Parent Login</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h2>INNOVATING SOFTWARE SOLUTIONS FOR A SMARTER FUTURE</h2>
+    <img src="{{ url_for('static', filename='images/NAME.PNG') }}" alt="Daksh D Ad Banner" />
+  </div>
+
+  <section id="about">
+    <h2>About Us</h2>
+    <p>We specialize in full-stack software development, custom dashboards, and mobile applications. Our goal is to deliver scalable, secure, and user-friendly solutions for businesses and institutions.</p>
+  </section>
+
+  <section id="services">
+    <h2>Our Solutions</h2>
+    <div class="services">
+      <div class="service-box">
+        <h3>School Fee Management</h3>
+        <p>Automated fee collection, receipts, and reports.</p>
+      </div>
+      <div class="service-box">
+        <h3>Student Report Card</h3>
+        <p>Generate digital report cards with analytics.</p>
+      </div>
+      <div class="service-box">
+        <h3>Library Management</h3>
+        <p>Track books, issue/return, and inventory.</p>
+      </div>
+    </div>
+    
+    <hr class="service-divider">
+
+    <div class="services">
+      <div class="service-box">
+        <h3>Stock & Billing System</h3>
+        <p>Smart billing and inventory tracking for businesses.</p>
+      </div>
+      <div class="service-box">
+        <h3>Nursing Home System</h3>
+        <p>Manage patients, staff, and medical records securely.</p>
+      </div>
+      <div class="service-box">
+        <h3>Employee Salary</h3>
+        <p>Payroll automation with tax & compliance support.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="vision" class="gif-section">
+    <h2>Our Vision</h2>
+    <p>Empowering institutions with innovation and technology.</p>
+    <img src="{{ url_for('static', filename='images/banner.gif') }}" alt="Daksh D Animated Vision" />
+  </section>
+
+  <!-- Gallery Section -->
+  <section id="gallery">
+    <h2>Gallery</h2>
+    <div class="gallery">
+      <img src="{{ url_for('static', filename='images/brochure.png') }}" alt="School Building">
+      <img src="{{ url_for('static', filename='images/employee.jpg') }}" alt="Employee Management Software">
+      <img src="{{ url_for('static', filename='images/picfee.jpg') }}" alt="DakshD Brochure">
+	  <img src="{{ url_for('static', filename='images/picmed.jpg') }}" alt="Employee Management Software">
+      <img src="{{ url_for('static', filename='images/picrpt.jpg') }}" alt="DakshD Brochure">
+	  <img src="{{ url_for('static', filename='images/picfee.jpg') }}" alt="Employee Management Software">
+     	  
+    </div>
+  </section>
+
+  <section id="contact">
+    <h2>Contact Us</h2>
+    <p>Email: <a href="mailto:dakshdd@live.in">dakshdd@live.in</a></p>
+    <p>Phone: <a href="tel:+919810124820">+91-9810124820</a></p>
+    <p>Location: Tilak Nagar, New Delhi</p>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 Daksh D Technologies | All Rights Reserved</p>
+  </footer>
+
+  <script>
+    window.addEventListener("scroll", function() {
+      const navbar = document.getElementById("navbar");
+      if (window.scrollY > 50) {
+        navbar.classList.add("scrolled");
+      } else {
+        navbar.classList.remove("scrolled");
+      }
+    });
+
+    function toggleMenu() {
+      document.getElementById("menu").classList.toggle("active");
+    }
+
+    const serviceBoxes = document.querySelectorAll('.service-box');
+    window.addEventListener('scroll', () => {
+      serviceBoxes.forEach(box => {
+        const boxPosition = box.getBoundingClientRect().top;
+        const screenPosition = window.innerHeight / 1.2;
+        if (boxPosition < screenPosition) {
+          box.style.opacity = "1";
+          box.style.transform = "translateY(0)";
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

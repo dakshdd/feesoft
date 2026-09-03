@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Remote App Launcher</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-yellow {
+            background-color: #FFC107;
+        }
+
+        .btn-red {
+            background-color: #DC3545;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PALAK IT & SECURITY</h1>
+    <a href="{{ url_for('ritu_tally') }}" class="btn">Ritu-Tally</a>
+    <a href="{{ url_for('ritu_data') }}" class="btn btn-yellow">Ritu-Data</a>
+    <a href="{{ url_for('ritu_export') }}" class="btn btn-yellow">Ritu-Export</a>
+    <a href="{{ url_for('logoff') }}" class="btn btn-red">Logoff</a>
+</body>
+
+</html>

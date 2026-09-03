@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Fee Entry</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0000ff00;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .card {
+      background: #0000ff60;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    input,
+    select,
+    button {
+      padding: 8px;
+      margin-top: 5px;
+    }
+
+    .success {
+      background: #d1fae5;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    .error {
+      background: #fecaca;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    #studentList {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h2>Fee Entry</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, msg in messages %}
+    <div class="{{ 'error' if category == 'error' else 'success' }}">{{ msg }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <label>Search Student Name / Admission Code</label>
+    <input type="text" id="searchBox" placeholder="Type student name or admission code...">
+    <select id="studentList" size="6"></select>
+
+    <div id="details"></div>
+  </div>
+
+  <script src="{{ url_for('static', filename='fee_entry.js') }}"></script>
+</body>
+
+</html>

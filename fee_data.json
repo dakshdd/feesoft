@@ -1,0 +1,62 @@
+{
+  "Nursery": {
+    "admission": 2500.0,
+    "annual": 1500.0,
+    "examination": 800.0,
+    "tuition": 1200.0
+  },
+  "KG": {
+    "admission": 3000.0,
+    "annual": 1800.0,
+    "examination": 900.0,
+    "tuition": 1500.0
+  },
+  "1st": {
+    "admission": 5000.0,
+    "annual": 2000.0,
+    "examination": 500.0,
+    "tuition": 2500.0
+  },
+  "2nd": {
+    "admission": 7000.0,
+    "annual": 2000.0,
+    "examination": 1000.0,
+    "tuition": 1200.0
+  },
+  "3rd": {
+    "admission": 0.0,
+    "annual": 2000.0,
+    "examination": 1000.0,
+    "tuition": 500.0
+  },
+  "4th": {
+    "admission": 0.0,
+    "annual": 5000.0,
+    "examination": 0.0,
+    "tuition": 1000.0
+  },
+  "5th": {
+    "admission": 0.0,
+    "annual": 5000.0,
+    "examination": 0.0,
+    "tuition": 1500.0
+  },
+  "XI-SCI": {
+    "admission": 5000.0,
+    "annual": 1500.0,
+    "examination": 2000.0,
+    "tuition": 2500.0
+  },
+  "XI-COM": {
+    "admission": 5000.0,
+    "annual": 1500.0,
+    "examination": 1000.0,
+    "tuition": 2200.0
+  },
+  "XII-SCI": {
+    "admission": 0.0,
+    "annual": 5000.0,
+    "examination": 1000.0,
+    "tuition": 4000.0
+  }
+}
