@@ -1,9 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session
-from pymongo import MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
-from db import master, counters, transport_collection, tran_collection, users_collection
+from db import master_collection, counters_collection, transport_collection, tran_collection, users_collection, students_collection
 
 # ------------------ Import Blueprints ------------------
 from classrpt import classrpt_bp
@@ -55,9 +54,10 @@ def dashboard():
 def home():
     if "user" not in session:
         return redirect(url_for("login"))
-    male_count = db.students.count_documents({"gender": "Male"})
-    female_count = db.students.count_documents({"gender": "Female"})
-    new_admissions = db.students.count_documents({"admission_year": 2026})
+    male_count = students_collection.count_documents({"gender": "Male"})
+    female_count = students_collection.count_documents({"gender": "Female"})
+    new_admissions = students_collection.count_documents(
+        {"admission_year": 2026})
     return render_template("welcome.html",
                            male=male_count,
                            female=female_count,
@@ -112,12 +112,12 @@ def reset_password():
         adm_code = request.form.get("adm_code")
         new_password = request.form.get("new_password")
 
-        student = db.master.find_one({"adm_code": adm_code})
+        student = master_collection.find_one({"adm_code": adm_code})
         if not student:
             return render_template("reset_password.html", error="❌ Admission code not found!")
 
         hashed_pw = generate_password_hash(new_password)
-        db.master.update_one(
+        master_collection.update_one(
             {"adm_code": adm_code},
             {"$set": {"password_hash": hashed_pw}}
         )
