@@ -15,13 +15,15 @@ master_bp = Blueprint("master_bp", __name__)
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
-# --- School DB connection ---
-client = MongoClient("mongodb://dakshd:Dhanjal01@localhost:27017/school_db")
-db = client["school_db"]
-master = db["master"]
-counters = db["counters"]
+# Environment variable se URI lo
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
+# School DB
+school_db = client["school_db"]
+master = school_db["master"]
+counters = school_db["counters"]
 
-# --- Transport DB connection ---
+# Transport DB
 transport_db = client["transport_db"]
 transport_collection = transport_db["stand_name"]
 

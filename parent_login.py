@@ -10,14 +10,15 @@ import os
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "default_secret")
 
-# MongoDB connection
-client = MongoClient("mongodb://dakshd:Dhanjal01@localhost:27017/school_db")
+# mongodb connection
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
+# School DB
 school_db = client["school_db"]
 master_col = school_db["master"]
 
 # Transactions DB
-tran_client = MongoClient("mongodb://dakshdd:Dhanjal99@localhost:27017/tran")
-tran_db = tran_client["tran"]
+tran_db = client["tran"]
 tran_col = tran_db["transactions"]
 
 # Razorpay client

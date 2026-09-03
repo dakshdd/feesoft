@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request, render_template_string
 from pymongo import MongoClient
 import datetime
@@ -6,7 +7,9 @@ import datetime
 student_crud_bp = Blueprint("student_crud_bp", __name__)
 
 # ------------------ MongoDB Connection ------------------
-client = MongoClient("mongodb://localhost:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+
+client = MongoClient(MONGO_URI)
 db = client["school_db"]
 master = db["master"]
 

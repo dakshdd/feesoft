@@ -1,4 +1,5 @@
 # studledg.py
+import os
 from flask import Blueprint, request, render_template, render_template_string, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -7,10 +8,11 @@ from bson.objectid import ObjectId
 studledg_bp = Blueprint("studledg_bp", __name__)
 
 # ✅ MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")
-db = client["tran"]   # database name
-tran_collection = db["transactions"]   # collection name
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 
+client = MongoClient(MONGO_URI)
+db = client["tran"]
+tran_collection = db["transactions"]
 # ------------------ Base Layout ------------------
 base_layout = """
 <!DOCTYPE html>

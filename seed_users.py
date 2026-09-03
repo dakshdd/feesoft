@@ -1,11 +1,15 @@
 # seed_users.py
+import os
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash
 
-# ✅ MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")
+# ✅ MongoDB connectionimport os
+
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
 db = client["school_db"]
 users_collection = db["users"]
+
 
 # ✅ Seed users
 users = [

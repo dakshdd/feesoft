@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request, render_template_string
 from pymongo import MongoClient
 
@@ -5,10 +6,10 @@ from pymongo import MongoClient
 transport_bp = Blueprint("transport_bp", __name__)
 
 # ✅ MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
 db = client["transport_db"]
 stand_collection = db["stand_name"]
-
 # ------------------ HTML Template ------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
