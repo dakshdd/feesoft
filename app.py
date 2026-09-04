@@ -8,7 +8,12 @@ from flask import Blueprint, Flask, request, render_template_string, redirect, u
 from pymongo import MongoClient, ASCENDING, ReturnDocument, errors
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
-from db import master, counters, transport_collection, tran_collection
+from db import (
+    master_collection,
+    counters_collection,
+    transport_collection,
+    tran_collection,
+)
 
 # ------------------ Blueprint Setup ------------------
 master_bp = Blueprint("master_bp", __name__)
@@ -18,11 +23,11 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
 
 # Ensure counter exists
-if counters.count_documents({"_id": "adm_code"}) == 0:
-    counters.insert_one({"_id": "adm_code", "seq": 0})
+if counters_collection.count_documents({"_id": "adm_code"}) == 0:
+    counters_collection.insert_one({"_id": "adm_code", "seq": 0})
 
 # Create unique index
-master.create_index([("adm_code", ASCENDING)], unique=True)
+master_collection.create_index([("adm_code", ASCENDING)], unique=True)
 
 # Upload folder
 UPLOAD_FOLDER = "static/uploads"
@@ -37,7 +42,7 @@ with open("fee_data.json", "r", encoding="utf-8") as f:
 
 
 def get_next_adm_code():
-    counter = counters.find_one_and_update(
+    counter = counters_collection.find_one_and_update(
         {"_id": "adm_code"},
         {"$inc": {"seq": 1}},
         return_document=ReturnDocument.AFTER,
@@ -196,7 +201,7 @@ FORM_HTML = """
 
 @master_bp.route("/", methods=["GET"])
 def index():
-    recent = list(master.find({}, {
+    recent = list(master_collection.find({}, {
         "adm_code": 1, "student_name": 1, "class": 1,
         "sec": 1, "catg": 1, "father_name": 1, "mother_name": 1,
         "address": 1, "contact": 1, "doa": 1, "photo": 1,
@@ -310,7 +315,7 @@ def save_master():
     }
 
     try:
-        master.insert_one(doc)
+        master_collection.insert_one(doc)
         return redirect(url_for("master_bp.receipt", adm_code=adm_code, plain_password=plain_password))
     except Exception as e:
         flash(f"Error: {str(e)}", "error")
@@ -412,7 +417,7 @@ RECEIPT_HTML = """
 
 @master_bp.route("/receipt/<adm_code>/<plain_password>")
 def receipt(adm_code, plain_password):
-    student = master.find_one({"adm_code": adm_code})
+    student = master_collection.find_one({"adm_code": adm_code})
     if not student:
         flash("Student not found", "error")
         return redirect(url_for("index"))

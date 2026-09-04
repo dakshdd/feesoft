@@ -1,47 +1,70 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session
-from pymongo import MongoClient
 from werkzeug.security import check_password_hash
 from datetime import timedelta
 
+from db import users_collection
+
+
 app = Flask(__name__)
-app.secret_key = "supersecretkey"   # change this in production
+
+# Use Render Environment Variable
+app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")
 app.permanent_session_lifetime = timedelta(minutes=30)
-
-# ------------------ MongoDB Connection ------------------
-MONGO_URI = os.environ.get("MONGO_URI")
-
-client = MongoClient(MONGO_URI)
-
-# --- Users DB connection ---
-users_db = client["users_name"]
-users_col = users_db["users"]
 
 
 @app.route("/", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
 
-        user = users_col.find_one({"username": username})
-        if user and check_password_hash(user["password_hash"], password):
+    if request.method == "POST":
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        # Find user from school_db.users
+        user = users_collection.find_one({
+            "username": username
+        })
+
+        if user:
+            print(f"✅ User found: {username}")
+        else:
+            print(f"❌ User not found: {username}")
+
+        # Check password
+        if user and check_password_hash(
+            user.get("password_hash", ""),
+            password
+        ):
+
+            session.permanent = True
             session["username"] = username
-            session["role"] = user["role"]
+            session["role"] = user.get("role", "")
+
+            role = user.get("role")
 
             # Role-based redirect
-            if user["role"] == "admin":
+            if role == "admin":
                 return redirect(url_for("admin_dashboard"))
-            elif user["role"] == "teacher":
+
+            elif role == "teacher":
                 return redirect(url_for("teacher_dashboard"))
-            elif user["role"] == "parent":
+
+            elif role == "parent":
                 return redirect(url_for("parent_dashboard"))
-            elif user["role"] == "clerk":
+
+            elif role == "clerk":
                 return redirect(url_for("clerk_dashboard"))
+
             else:
                 return "❌ Unknown role"
+
         else:
-            return "❌ Invalid username or password"
+            return render_template(
+                "login.html",
+                error="Invalid credentials"
+            )
+
     return render_template("login.html")
 
 
