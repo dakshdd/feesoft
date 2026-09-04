@@ -3,7 +3,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, flash,
 from pymongo import MongoClient, errors
 import datetime
 from db import master_collection, counters_collection, transport_collection, \
-    tran_dblection, users_collection, tran_db, master_col
+    tran_collection, users_collection, tran_db, master_col
 
 # ------------------ Blueprint Setup ------------------
 fee_entry_bp = Blueprint("fee_entry_bp", __name__)
