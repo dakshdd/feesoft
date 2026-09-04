@@ -45,6 +45,12 @@ try:
     tran_col = tran_collection
     master_col = master_collection
 
+    # Backward compatibility
+    master = master_collection
+    counters = counters_collection
+    transport = transport_collection
+    tran = tran_collection
+
     # Create unique index
     try:
         tran_collection.create_index(
