@@ -2,7 +2,8 @@ import os
 from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
 from pymongo import MongoClient, errors
 import datetime
-from db import master_collection, counters_collection, transport_collection, tran_collection, users_collection, tran_col, master_col
+from db import master_collection, counters_collection, transport_collection, \
+    tran_dblection, users_collection, tran_db, master_col
 
 # ------------------ Blueprint Setup ------------------
 fee_entry_bp = Blueprint("fee_entry_bp", __name__)
@@ -93,7 +94,7 @@ def month_total():
             tuition_monthly + transport_monthly
         )
 
-    trans = tran_col.find_one({"adm_code": adm_code, "month": month})
+    trans = tran_db.find_one({"adm_code": adm_code, "month": month})
     paid = trans.get("paid", 0) if trans else 0
     balance = total - paid
 
@@ -117,7 +118,7 @@ def receive_payment():
     if not month:
         months = ["April", "May", "June", "July", "August", "September",
                   "October", "November", "December", "January", "February", "March"]
-        trans = tran_col.find({"adm_code": adm_code}, {"month": 1})
+        trans = tran_db.find({"adm_code": adm_code}, {"month": 1})
         paid_months = [t.get("month") for t in trans if t.get("month")]
         for m in months:
             if m not in paid_months:
@@ -145,7 +146,7 @@ def receive_payment():
         return f"REC-{counter['seq']:05d}"
 
     receipt_no = get_next_receipt_number()
-    tran_col.insert_one({
+    tran_db.insert_one({
         "receipt_no": receipt_no,
         "adm_code": adm_code,
         "student_name": record.get("student_name", ""),
@@ -191,7 +192,7 @@ def next_month():
     months = ["April", "May", "June", "July", "August", "September",
               "October", "November", "December", "January", "February", "March"]
 
-    trans = tran_col.find({"adm_code": adm_code}, {"month": 1})
+    trans = tran_db.find({"adm_code": adm_code}, {"month": 1})
     paid_months = [t.get("month") for t in trans if t.get("month")]
 
     next_month = None
@@ -247,7 +248,7 @@ def api_receive_payment():
 
     receipt_no = f"REC-{tran_db['counters'].find_one_and_update({'_id': 'receipt_number'}, {'$inc': {'seq': 1}}, upsert=True, return_document=True)['seq']:05d}"
 
-    tran_col.insert_one({
+    tran_db.insert_one({
         "receipt_no": receipt_no,
         "adm_code": adm_code,
         "student_name": record.get("student_name", ""),
