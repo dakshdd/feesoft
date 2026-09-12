@@ -39,7 +39,7 @@ def login():
             session["role"] = user.get("role", "user")
             return redirect(url_for("dashboard"))
         else:
-            return render_template("login.html", error="Invalid credentials")
+            return render_template("login.html", error="Invalid credentials please try again.")
     return render_template("login.html")
 
 
