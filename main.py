@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
 from db import master_collection, counters_collection, transport_collection, tran_collection, users_collection, students_collection
+# from db import master_collection, counters_collection, users_collection, students_collection, transactions_collection
 
 # ------------------ Import Blueprints ------------------
 from classrpt import classrpt_bp

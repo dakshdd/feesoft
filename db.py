@@ -2,23 +2,23 @@ import os
 from pymongo import MongoClient, errors
 
 # ------------------ MongoDB URI ------------------
+# Prefer environment variable (Render/Deployment), fallback to localhost
 LOCAL_URI = "mongodb://localhost:27017/"
 ATLAS_URI = "mongodb+srv://dakshdd_db_user:dhanjal01@cluster0.w9rs06v.mongodb.net/school_db?retryWrites=true&w=majority"
 
-MONGO_URI = os.getenv("MONGO_URI", ATLAS_URI)
+MONGO_URI = os.getenv("MONGO_URI", LOCAL_URI)
 
-# ------------------ Collections ------------------
+# ------------------ Default Collections ------------------
 master_collection = None
 counters_collection = None
 users_collection = None
 students_collection = None
-fees_collection = None
-transactions_collection = None
+transport_collection = None
+tran_collection = None
 
 # Aliases for backward compatibility
-master_col = None
 tran_col = None
-tran_db = None
+master_col = None
 
 try:
     # ------------------ Connect ------------------
@@ -29,35 +29,45 @@ try:
 
     # Test connection
     client.admin.command("ping")
-    print(f"✅ MongoDB Connected Successfully → {MONGO_URI}")
+    print(f"? MongoDB Connected Successfully ? {MONGO_URI}")
 
     # ------------------ SCHOOL DATABASE ------------------
     school_db = client["school_db"]
-
     master_collection = school_db["master"]
     counters_collection = school_db["counters"]
     users_collection = school_db["users"]
     students_collection = school_db["students"]
-    fees_collection = school_db["fees"]
-    transactions_collection = school_db["transactions"]
+
+    # ------------------ TRANSPORT DATABASE ------------------
+    transport_db = client["transport_db"]
+    transport_collection = transport_db["stand_name"]
+
+    # ------------------ TRANSACTION DATABASE ------------------
+    tran_db = client["tran"]
+    tran_collection = tran_db["transactions"]
 
     # ------------------ Aliases ------------------
+    tran_col = tran_collection
     master_col = master_collection
-    tran_col = transactions_collection
-    tran_db = transactions_collection   # ab tran bhi school_db ke andar hi hai
+
+    # Backward compatibility
+    master = master_collection
+    counters = counters_collection
+    transport = transport_collection
+    tran = tran_collection
 
     # ------------------ Index ------------------
     try:
-        transactions_collection.create_index(
+        tran_collection.create_index(
             [("adm_code", 1), ("month", 1)],
             unique=True
         )
-        print("✅ Transaction index verified")
+        print("? Transaction index verified")
     except Exception as e:
-        print(f"⚠️ Index creation skipped: {e}")
+        print(f"?? Index creation skipped: {e}")
 
 except errors.ServerSelectionTimeoutError as e:
-    print(f"❌ MongoDB connection failed: {e}")
+    print(f"? MongoDB connection failed: {e}")
 
 except Exception as e:
-    print(f"❌ Unexpected MongoDB error: {e}")
+    print(f"? Unexpected MongoDB error: {e}")
