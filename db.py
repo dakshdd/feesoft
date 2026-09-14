@@ -4,7 +4,7 @@ from pymongo import MongoClient, errors
 # ------------------ MongoDB URI ------------------
 # Prefer environment variable (Render/Deployment), fallback to localhost
 LOCAL_URI = "mongodb://localhost:27017/"
-ATLAS_URI = "mongodb+srv://dakshdd_db_user:Dhanjal01@cluster0.luwfblh.mongodb.net/school_db?retryWrites=true&w=majority"
+ATLAS_URI = "mongodb+srv://dakshdd_db_user:dhanjal01@cluster0.w9rs06v.mongodb.net/school_db?retryWrites=true&w=majority"
 
 MONGO_URI = os.getenv("MONGO_URI", LOCAL_URI)
 
