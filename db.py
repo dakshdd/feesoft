@@ -2,23 +2,23 @@ import os
 from pymongo import MongoClient, errors
 
 # ------------------ MongoDB URI ------------------
-# Prefer environment variable (Render/Deployment), fallback to localhost
 LOCAL_URI = "mongodb://localhost:27017/"
 ATLAS_URI = "mongodb+srv://dakshdd_db_user:dhanjal01@cluster0.w9rs06v.mongodb.net/school_db?retryWrites=true&w=majority"
 
-MONGO_URI = os.getenv("MONGO_URI", LOCAL_URI)
+MONGO_URI = os.getenv("MONGO_URI", ATLAS_URI)
 
-# ------------------ Default Collections ------------------
+# ------------------ Collections ------------------
 master_collection = None
 counters_collection = None
 users_collection = None
 students_collection = None
-transport_collection = None
-tran_collection = None
+fees_collection = None
+transactions_collection = None
 
 # Aliases for backward compatibility
-tran_col = None
 master_col = None
+tran_col = None
+tran_db = None
 
 try:
     # ------------------ Connect ------------------
@@ -33,32 +33,22 @@ try:
 
     # ------------------ SCHOOL DATABASE ------------------
     school_db = client["school_db"]
+
     master_collection = school_db["master"]
     counters_collection = school_db["counters"]
     users_collection = school_db["users"]
     students_collection = school_db["students"]
-
-    # ------------------ TRANSPORT DATABASE ------------------
-    transport_db = client["transport_db"]
-    transport_collection = transport_db["stand_name"]
-
-    # ------------------ TRANSACTION DATABASE ------------------
-    tran_db = client["tran"]
-    tran_collection = tran_db["transactions"]
+    fees_collection = school_db["fees"]
+    transactions_collection = school_db["transactions"]
 
     # ------------------ Aliases ------------------
-    tran_col = tran_collection
     master_col = master_collection
-
-    # Backward compatibility
-    master = master_collection
-    counters = counters_collection
-    transport = transport_collection
-    tran = tran_collection
+    tran_col = transactions_collection
+    tran_db = transactions_collection   # ab tran bhi school_db ke andar hi hai
 
     # ------------------ Index ------------------
     try:
-        tran_collection.create_index(
+        transactions_collection.create_index(
             [("adm_code", 1), ("month", 1)],
             unique=True
         )
