@@ -1,3 +1,4 @@
+# main.py
 import os
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash

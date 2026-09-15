@@ -1,7 +1,8 @@
 # studledg.py
 import os
-from flask import Blueprint, request, render_template, render_template_string, render_template
+from flask import Blueprint, request, render_template, render_template_string
 from pymongo import MongoClient
+from db import master_collection
 from bson.objectid import ObjectId
 
 # ------------------ Blueprint Setup ------------------
@@ -80,16 +81,70 @@ def ledger_home():
     return render_template_string(base_layout, content=form_html)
 
 
-# ✅ Print single transaction by ObjectId
 @studledg_bp.route("/print/<tran_id>")
 def print_transaction(tran_id):
     try:
-        record = tran_collection.find_one({"_id": ObjectId(tran_id)})
+        record = tran_collection.find_one({
+            "_id": ObjectId(tran_id)
+        })
     except Exception:
         return "<h2>Invalid transaction ID format</h2>"
 
     if not record:
         return "<h2>Transaction not found</h2>"
 
-    # ✅ Use same receipt.html template with safe defaults
-    return render_template("receipt.html", **record)
+    # Get student details from school_db.master
+    student = master_collection.find_one({
+        "adm_code": record.get("adm_code", "")
+    }) or {}
+
+    return render_template(
+        "receipt.html",
+
+        # Receipt / student information
+        receipt_no=record.get("receipt_no", ""),
+        adm_code=record.get("adm_code", ""),
+        student_name=record.get(
+            "student_name",
+            student.get("student_name", "")
+        ),
+        student_class=record.get(
+            "student_class",
+            student.get("class", "")
+        ),
+        section=record.get(
+            "section",
+            student.get("section", "")
+        ),
+        father_name=record.get(
+            "father_name",
+            student.get("father_name", "")
+        ),
+
+        # Payment information
+        date=record.get("date", ""),
+        month=record.get("month", ""),
+        payment_mode=record.get(
+            "payment_mode",
+            record.get("mode", "Cash")
+        ),
+        remark=record.get("remark", ""),
+        paid=record.get("paid", 0),
+        balance=record.get("balance", 0),
+
+        # Fee information from master
+        admission_fee=student.get("admission_fee", 0),
+        annual_fee=student.get("annual_fee", 0),
+        tuition_fee=student.get("tuition_fee", 0),
+
+        transport_fee=student.get(
+            "transport_fee",
+            student.get("transport_total", 0)
+        ),
+
+        devl_fee=student.get("devl_fee", 0),
+        eclass=student.get("eclass", 0),
+        science=student.get("science", 0),
+        computer=student.get("computer", 0),
+        kgarten=student.get("kgarten", 0)
+    )
