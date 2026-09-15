@@ -28,9 +28,18 @@ def defaulter_report():
             if s.get(month_field, "Unpaid") != "Paid"
         ]
 
+        # Grand totals
         total_defaulters = len(defaulters)
+
+        # Safely handle balance_fee stored as number or string
+        def get_balance(value):
+            try:
+                return float(value or 0)
+            except (ValueError, TypeError):
+                return 0
+
         total_balance = sum(
-            s.get("balance_fee", 0)
+            get_balance(s.get("balance_fee"))
             for s in defaulters
         )
 
