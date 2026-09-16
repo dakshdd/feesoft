@@ -3,8 +3,11 @@ from werkzeug.security import check_password_hash
 from pymongo import MongoClient, ReturnDocument
 from types import SimpleNamespace
 import razorpay
-import datetime
 import os
+import datetime
+from datetime import timezone, timedelta
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "default_secret")
@@ -184,11 +187,11 @@ def verify_payment():
             "science": science,
             "computer": computer,
             "kgarten": kgarten,
-            "month_total": expected,
+            "month_total": round(expected, 2),
             "paid": paid,
             "balance": new_balance,
             "month": month,
-            "date": datetime.datetime.now(),
+            "date": datetime.datetime.now(IST).replace(tzinfo=None),
             "payment_id": data["payment_id"],
             "order_id": data["order_id"],
             "remark": data.get("remarks", ""),
