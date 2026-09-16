@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, render_template_string
-# from pymongo import MongoClient, errors
 from datetime import datetime, timedelta
+from db import tran_collection
 
 # ------------------ Blueprint Setup ------------------
 dailyreport_bp = Blueprint("dailyreport_bp", __name__)

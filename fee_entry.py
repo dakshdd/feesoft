@@ -1,4 +1,5 @@
 import datetime
+# from zoneinfo import ZoneInfo
 from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
 from pymongo import ReturnDocument, errors
 from db import master_collection, counters_collection, tran_collection, master_col
@@ -206,13 +207,28 @@ def receive_payment():
         "class": record.get("class", ""),
         "father_name": record.get("father_name", ""),
         "month": month,
+
+        # Head-wise fee breakup
+        "admission_fee": float(record.get("admission_fee", 0) or 0) if month == "April" else 0,
+        "annual_fee": float(record.get("annual_fee", 0) or 0) if month == "April" else 0,
+        "tuition_fee": float(record.get("tuition_fee", 0) or 0),
+        "transport_fee": round(float(record.get("transport_total", 0) or 0) / 12, 2),
+        "devl_fee": round(float(record.get("devl_fee", 0) or 0) / 12, 2),
+        "eclass": round(float(record.get("eclass", 0) or 0) / 12, 2),
+        "science": round(float(record.get("science", 0) or 0) / 12, 2),
+        "computer": round(float(record.get("computer", 0) or 0) / 12, 2),
+        "kgarten": round(float(record.get("kgarten", 0) or 0) / 12, 2),
+
+        # Totals
+        "month_total": month_fee(record, month),
         "paid": round(amount, 2),
         "balance": round(new_balance, 2),
-        "date": datetime.datetime.now(),
+
+        # Payment info
+        "date": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
         "payment_mode": mode,
         "remark": remark
     }
-
     try:
         tran_collection.insert_one(transaction)
     except errors.DuplicateKeyError:
@@ -249,7 +265,9 @@ def receive_payment():
         # Payment details
         payment_mode=mode,
         remark=remark,
-        date=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"),
+        date=datetime.datetime.now(
+            datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+        ).strftime("%d-%m-%Y %H:%M"),
         month=month,
         paid=round(amount, 2),
         balance=round(new_balance, 2),
@@ -386,7 +404,7 @@ def api_receive_payment():
             "month": month,
             "paid": round(amount, 2),
             "balance": round(new_balance, 2),
-            "date": datetime.datetime.now(),
+            "date": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
             "payment_mode": mode
         })
     except errors.DuplicateKeyError:
