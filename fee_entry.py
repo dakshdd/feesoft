@@ -1,8 +1,11 @@
 import datetime
-# from zoneinfo import ZoneInfo
+from datetime import timezone, timedelta
+
 from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
 from pymongo import ReturnDocument, errors
 from db import master_collection, counters_collection, tran_collection, master_col
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 fee_entry_bp = Blueprint("fee_entry_bp", __name__)
 
@@ -225,7 +228,7 @@ def receive_payment():
         "balance": round(new_balance, 2),
 
         # Payment info
-        "date": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
+        "date": datetime.datetime.now(IST).replace(tzinfo=None),
         "payment_mode": mode,
         "remark": remark
     }
@@ -265,9 +268,7 @@ def receive_payment():
         # Payment details
         payment_mode=mode,
         remark=remark,
-        date=datetime.datetime.now(
-            datetime.timezone(datetime.timedelta(hours=5, minutes=30))
-        ).strftime("%d-%m-%Y %H:%M"),
+        date=datetime.datetime.now(IST).strftime("%d-%m-%Y %H:%M"),
         month=month,
         paid=round(amount, 2),
         balance=round(new_balance, 2),
@@ -404,7 +405,7 @@ def api_receive_payment():
             "month": month,
             "paid": round(amount, 2),
             "balance": round(new_balance, 2),
-            "date": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
+            "date": datetime.datetime.now(IST).replace(tzinfo=None),
             "payment_mode": mode
         })
     except errors.DuplicateKeyError:
