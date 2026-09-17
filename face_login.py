@@ -1,6 +1,6 @@
 # face_login.py
 import os
-import cv2
+# import cv2
 import numpy as np
 import face_recognition
 from flask import Blueprint, request, jsonify, session

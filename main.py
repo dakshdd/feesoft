@@ -19,7 +19,7 @@ from fee_entry import fee_entry_bp
 from app import master_bp   # Admission Entry blueprint
 from marks_entry import marks_entry_bp
 from report_card import report_card_bp
-from face_login import face_bp
+# from face_login import face_bp
 
 
 # ------------------ Flask Setup ------------------
