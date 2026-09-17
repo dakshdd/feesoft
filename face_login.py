@@ -1,97 +1,265 @@
-import cv2
-import face_recognition
+# face_login.py
 import os
+import cv2
 import numpy as np
-from flask import Flask, render_template, redirect, url_for, session
+import face_recognition
+from flask import Blueprint, request, jsonify, session
 from pymongo import MongoClient
-from datetime import datetime, timedelta
+from datetime import datetime
 
-app = Flask(__name__)
-app.secret_key = "change-this-key"
+face_bp = Blueprint("face_bp", __name__)
 
-# Session timeout (5 minutes)
-SESSION_TIMEOUT = timedelta(minutes=5)
+# MongoDB
+MONGO_URI = os.getenv(
+    "MONGO_URI",
+    "mongodb://localhost:27017/"
+)
 
-# MongoDB setup
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
 db = client["school_db"]
 users = db["users"]
 
-# Load known faces
-known_encodings = []
-known_names = []
-
-for file in os.listdir("users"):
-    img_path = os.path.join("users", file)
-    img = face_recognition.load_image_file(img_path)
-    enc = face_recognition.face_encodings(img)[0]
-    known_encodings.append(enc)
-    known_names.append(os.path.splitext(file)[0])
+# Face matching tolerance
+FACE_TOLERANCE = 0.50
 
 
-def detect_face():
-    video = cv2.VideoCapture(0)
-    while True:
-        ret, frame = video.read()
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+# --------------------------------------------------
+# REGISTER FACE
+# --------------------------------------------------
 
-        faces = face_recognition.face_locations(rgb_frame)
-        encodings = face_recognition.face_encodings(rgb_frame, faces)
+@face_bp.route("/face/register", methods=["POST"])
+def register_face():
 
-        for enc in encodings:
-            matches = face_recognition.compare_faces(known_encodings, enc)
-            face_dist = face_recognition.face_distance(known_encodings, enc)
-            best_match = np.argmin(face_dist)
+    username = request.form.get("username", "").strip()
 
-            if matches[best_match]:
-                username = known_names[best_match]
-                users.update_one(
-                    {"username": username},
-                    {"$set": {"last_login": datetime.now()}}
+    if not username:
+        return jsonify({
+            "success": False,
+            "message": "Username required"
+        })
+
+    user = users.find_one({"username": username})
+
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "User not found"
+        })
+
+    camera = cv2.VideoCapture(0)
+
+    if not camera.isOpened():
+        return jsonify({
+            "success": False,
+            "message": "Camera not available"
+        })
+
+    encoding = None
+
+    try:
+        while True:
+
+            ret, frame = camera.read()
+
+            if not ret:
+                continue
+
+            rgb = cv2.cvtColor(
+                frame,
+                cv2.COLOR_BGR2RGB
+            )
+
+            locations = face_recognition.face_locations(rgb)
+
+            # Exactly one face required
+            if len(locations) == 1:
+
+                encodings = face_recognition.face_encodings(
+                    rgb,
+                    locations
                 )
-                video.release()
-                cv2.destroyAllWindows()
-                return username
 
-        cv2.imshow("Face Login", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                if encodings:
+                    encoding = encodings[0]
+                    break
 
-    video.release()
-    cv2.destroyAllWindows()
-    return None
+            cv2.imshow("Register Face - Press Q to Cancel", frame)
 
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
 
-@app.before_request
-def check_session_timeout():
-    if "user" in session:
-        if datetime.now() > session.get("expires", datetime.now()):
-            session.clear()
-            return redirect(url_for("login"))
+    finally:
+        camera.release()
+        cv2.destroyAllWindows()
 
+    if encoding is None:
+        return jsonify({
+            "success": False,
+            "message": "Face registration cancelled or no face detected"
+        })
 
-@app.route("/")
-def login():
-    user = detect_face()
-    if user:
-        session["user"] = user
-        session["expires"] = datetime.now() + SESSION_TIMEOUT
-        return redirect(url_for("dashboard"))
-    return render_template("login.html")
+    # Save encoding in MongoDB
+    users.update_one(
+        {"username": username},
+        {
+            "$set": {
+                "face_encoding": encoding.tolist(),
+                "face_enabled": True,
+                "face_registered_at": datetime.now()
+            }
+        }
+    )
 
-
-@app.route("/dashboard")
-def dashboard():
-    if "user" in session:
-        return render_template("dashboard.html", user=session["user"])
-    return redirect(url_for("login"))
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
+    return jsonify({
+        "success": True,
+        "message": f"Face registered successfully for {username}"
+    })
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+# --------------------------------------------------
+# FACE LOGIN
+# --------------------------------------------------
+
+@face_bp.route("/face/login", methods=["GET"])
+def face_login():
+
+    # Get all users having registered face
+    registered_users = list(
+        users.find(
+            {
+                "face_enabled": True,
+                "face_encoding": {
+                    "$exists": True
+                }
+            },
+            {
+                "username": 1,
+                "role": 1,
+                "face_encoding": 1
+            }
+        )
+    )
+
+    if not registered_users:
+        return jsonify({
+            "success": False,
+            "message": "No registered faces found"
+        })
+
+    known_encodings = []
+    known_users = []
+
+    for user in registered_users:
+
+        try:
+            enc = np.array(
+                user["face_encoding"],
+                dtype=np.float64
+            )
+
+            if len(enc) == 128:
+                known_encodings.append(enc)
+                known_users.append(user)
+
+        except Exception:
+            continue
+
+    if not known_encodings:
+        return jsonify({
+            "success": False,
+            "message": "No valid face encodings found"
+        })
+
+    camera = cv2.VideoCapture(0)
+
+    if not camera.isOpened():
+        return jsonify({
+            "success": False,
+            "message": "Camera not available"
+        })
+
+    matched_user = None
+
+    try:
+
+        while True:
+
+            ret, frame = camera.read()
+
+            if not ret:
+                continue
+
+            rgb = cv2.cvtColor(
+                frame,
+                cv2.COLOR_BGR2RGB
+            )
+
+            locations = face_recognition.face_locations(rgb)
+
+            encodings = face_recognition.face_encodings(
+                rgb,
+                locations
+            )
+
+            for face_encoding in encodings:
+
+                distances = face_recognition.face_distance(
+                    known_encodings,
+                    face_encoding
+                )
+
+                if len(distances) == 0:
+                    continue
+
+                best_index = np.argmin(distances)
+                best_distance = distances[best_index]
+
+                if best_distance <= FACE_TOLERANCE:
+
+                    matched_user = known_users[best_index]
+                    break
+
+            if matched_user:
+                break
+
+            cv2.imshow(
+                "Face Login - Press Q to Cancel",
+                frame
+            )
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+    finally:
+        camera.release()
+        cv2.destroyAllWindows()
+
+    if not matched_user:
+
+        return jsonify({
+            "success": False,
+            "message": "Face not recognized"
+        })
+
+    username = matched_user["username"]
+
+    # Update last login
+    users.update_one(
+        {"username": username},
+        {
+            "$set": {
+                "last_login": datetime.now()
+            }
+        }
+    )
+
+    # Flask session
+    session["user"] = username
+    session["role"] = matched_user.get("role", "")
+
+    return jsonify({
+        "success": True,
+        "username": username,
+        "role": matched_user.get("role", ""),
+        "message": "Face login successful"
+    })

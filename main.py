@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
 from db import master_collection, counters_collection, transport_collection, tran_collection, users_collection, students_collection
-# from db import master_collection, counters_collection, users_collection, students_collection, transactions_collection
+
 
 # ------------------ Import Blueprints ------------------
 from classrpt import classrpt_bp
@@ -19,6 +19,7 @@ from fee_entry import fee_entry_bp
 from app import master_bp   # Admission Entry blueprint
 from marks_entry import marks_entry_bp
 from report_card import report_card_bp
+from face_login import face_bp
 
 
 # ------------------ Flask Setup ------------------
@@ -141,6 +142,7 @@ app.register_blueprint(dailyreport_bp, url_prefix="/dailyreport")
 app.register_blueprint(defaulter_bp, url_prefix="/defaulter")
 app.register_blueprint(student_crud_bp, url_prefix="/mastmodi")
 app.register_blueprint(classrpt_bp, url_prefix="/classwise")
+app.register_blueprint(face_bp)
 
 # ------------------ Run ------------------
 if __name__ == "__main__":
