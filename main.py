@@ -142,7 +142,7 @@ app.register_blueprint(dailyreport_bp, url_prefix="/dailyreport")
 app.register_blueprint(defaulter_bp, url_prefix="/defaulter")
 app.register_blueprint(student_crud_bp, url_prefix="/mastmodi")
 app.register_blueprint(classrpt_bp, url_prefix="/classwise")
-app.register_blueprint(face_bp)
+# app.register_blueprint(face_bp)
 
 # ------------------ Run ------------------
 if __name__ == "__main__":
