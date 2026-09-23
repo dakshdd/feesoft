@@ -132,19 +132,44 @@ def print_transaction(tran_id):
         paid=record.get("paid", 0),
         balance=record.get("balance", 0),
 
-        # Fee information from master
-        admission_fee=student.get("admission_fee", 0),
-        annual_fee=student.get("annual_fee", 0),
-        tuition_fee=student.get("tuition_fee", 0),
+        # Fee information (use transaction values first)
 
-        transport_fee=student.get(
-            "transport_fee",
-            student.get("transport_total", 0)
+        admission_fee=record.get("admission_fee", 0),
+
+        annual_fee=record.get("annual_fee", 0),
+
+        tuition_fee=record.get(
+            "tuition_fee",
+            student.get("tuition_fee", 0)
         ),
 
-        devl_fee=student.get("devl_fee", 0),
-        eclass=student.get("eclass", 0),
-        science=student.get("science", 0),
-        computer=student.get("computer", 0),
-        kgarten=student.get("kgarten", 0)
+        transport_fee=record.get(
+            "transport_fee",
+            round(float(student.get("transport_total", 0) or 0) / 10.5, 2)
+        ),
+
+        devl_fee=record.get(
+            "devl_fee",
+            round(float(student.get("devl_fee", 0) or 0) / 12, 2)
+        ),
+
+        eclass=record.get(
+            "eclass",
+            round(float(student.get("eclass", 0) or 0) / 12, 2)
+        ),
+
+        science=record.get(
+            "science",
+            round(float(student.get("science", 0) or 0) / 12, 2)
+        ),
+
+        computer=record.get(
+            "computer",
+            round(float(student.get("computer", 0) or 0) / 12, 2)
+        ),
+
+        kgarten=record.get(
+            "kgarten",
+            round(float(student.get("kgarten", 0) or 0) / 12, 2)
+        )
     )

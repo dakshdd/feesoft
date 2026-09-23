@@ -19,6 +19,8 @@ from fee_entry import fee_entry_bp
 from app import master_bp   # Admission Entry blueprint
 from marks_entry import marks_entry_bp
 from report_card import report_card_bp
+from studledg_mob import studledg_mob_bp
+
 # from face_login import face_bp
 
 
@@ -138,6 +140,7 @@ app.register_blueprint(marks_entry_bp, url_prefix="/marks")
 app.register_blueprint(report_card_bp, url_prefix="/reportcard")
 app.register_blueprint(receipt_bp, url_prefix="/receipts")
 app.register_blueprint(studledg_bp, url_prefix="/studledg")
+app.register_blueprint(studledg_mob_bp)
 app.register_blueprint(dailyreport_bp, url_prefix="/dailyreport")
 app.register_blueprint(defaulter_bp, url_prefix="/defaulter")
 app.register_blueprint(student_crud_bp, url_prefix="/mastmodi")

@@ -37,7 +37,7 @@ def next_receipt():
 
 def month_fee(student, month):
     tuition = float(student.get("tuition_fee", 0) or 0)
-    transport = float(student.get("transport_total", 0) or 0) / 12
+    transport = float(student.get("transport_total", 0) or 0) / 10.5
     devl = float(student.get("devl_fee", 0) or 0) / 12
     eclass = float(student.get("eclass", 0) or 0) / 12
     science = float(student.get("science", 0) or 0) / 12
@@ -216,7 +216,7 @@ def receive_payment():
         "admission_fee": float(record.get("admission_fee", 0) or 0) if month == "April" else 0,
         "annual_fee": float(record.get("annual_fee", 0) or 0) if month == "April" else 0,
         "tuition_fee": float(record.get("tuition_fee", 0) or 0),
-        "transport_fee": round(float(record.get("transport_total", 0) or 0) / 12, 2),
+        "transport_fee": round(float(record.get("transport_total", 0) or 0) / 10.5, 2),
         "devl_fee": round(float(record.get("devl_fee", 0) or 0) / 12, 2),
         "eclass": round(float(record.get("eclass", 0) or 0) / 12, 2),
         "science": round(float(record.get("science", 0) or 0) / 12, 2),
@@ -275,20 +275,20 @@ def receive_payment():
         balance=round(new_balance, 2),
 
         # Fee details
-        admission_fee=record.get("admission_fee", 0),
-        annual_fee=record.get("annual_fee", 0),
-        tuition_fee=record.get("tuition_fee", 0),
+        # Fee details for receipt (monthly values)
 
-        transport_fee=record.get(
-            "transport_fee",
-            record.get("transport_total", 0)
-        ),
-
-        devl_fee=record.get("devl_fee", 0),
-        eclass=record.get("eclass", 0),
-        science=record.get("science", 0),
-        computer=record.get("computer", 0),
-        kgarten=record.get("kgarten", 0)
+        admission_fee=float(record.get("admission_fee", 0)
+                            or 0) if month == "April" else 0,
+        annual_fee=float(record.get("annual_fee", 0)
+                         or 0) if month == "April" else 0,
+        tuition_fee=float(record.get("tuition_fee", 0) or 0),
+        transport_fee=round(
+            float(record.get("transport_total", 0) or 0) / 10.5, 2),
+        devl_fee=round(float(record.get("devl_fee", 0) or 0) / 12, 2),
+        eclass=round(float(record.get("eclass", 0) or 0) / 12, 2),
+        science=round(float(record.get("science", 0) or 0) / 12, 2),
+        computer=round(float(record.get("computer", 0) or 0) / 12, 2),
+        kgarten=round(float(record.get("kgarten", 0) or 0) / 12, 2),
     )
 
 

@@ -38,7 +38,9 @@ base_layout = """
 
 
 def prepare_receipt(receipt):
-    """Combine transaction data with student's master fee details."""
+    """Combine transaction data with student's master details.
+       Receipt always shows the values saved at payment time.
+    """
 
     student = master_collection.find_one({
         "adm_code": receipt.get("adm_code", "")
@@ -46,22 +48,7 @@ def prepare_receipt(receipt):
 
     data = dict(receipt)
 
-    for field in [
-        "tuition_fee",
-        "transport_total",
-        "devl_fee",
-        "eclass",
-        "science",
-        "computer",
-        "kgarten",
-        "admission_fee",
-        "annual_fee",
-        "total_fee",
-        "paid_fee",
-        "balance_fee"
-    ]:
-        data[field] = student.get(field, 0)
-
+    # Student Details (master se update)
     data["student_name"] = student.get(
         "student_name",
         data.get("student_name", "")
@@ -77,10 +64,27 @@ def prepare_receipt(receipt):
         data.get("father_name", "")
     )
 
+    data["section"] = student.get(
+        "section",
+        data.get("section", "")
+    )
+
+    # Payment Mode
     data["payment_mode"] = data.get(
         "payment_mode",
         data.get("mode", "Cash")
     )
+
+    # ✅ Receipt ke fee heads transaction se hi lo.
+    data["admission_fee"] = float(data.get("admission_fee", 0) or 0)
+    data["annual_fee"] = float(data.get("annual_fee", 0) or 0)
+    data["tuition_fee"] = float(data.get("tuition_fee", 0) or 0)
+    data["transport_fee"] = float(data.get("transport_fee", 0) or 0)
+    data["devl_fee"] = float(data.get("devl_fee", 0) or 0)
+    data["eclass"] = float(data.get("eclass", 0) or 0)
+    data["science"] = float(data.get("science", 0) or 0)
+    data["computer"] = float(data.get("computer", 0) or 0)
+    data["kgarten"] = float(data.get("kgarten", 0) or 0)
 
     return data
 

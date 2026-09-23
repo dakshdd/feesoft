@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/feesoft.iml" filepath="$PROJECT_DIR$/feesoft.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android/feesoft_android.iml" filepath="$PROJECT_DIR$/android/feesoft_android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/FEESOFT_CLEAN.iml" filepath="$PROJECT_DIR$/.idea/FEESOFT_CLEAN.iml" />
     </modules>
   </component>
 </project>
