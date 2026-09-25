@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, render_template_string
 from bson.objectid import ObjectId
 from markupsafe import escape
-from db import master_collection, tran_collection
+from db import master_collection, tran_collection, get_school
 
 receipt_bp = Blueprint("receipt_bp", __name__)
 
@@ -47,6 +47,12 @@ def prepare_receipt(receipt):
     }) or {}
 
     data = dict(receipt)
+
+    school = get_school()
+
+    data["school_name"] = school.get("school_name", "") if school else ""
+    data["school_address"] = school.get("address", "") if school else ""
+    data["school_phone"] = school.get("phone", "") if school else ""
 
     # Student Details (master se update)
     data["student_name"] = student.get(

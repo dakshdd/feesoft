@@ -5,3 +5,5 @@ build/
 *.zip
 *.log
 *.tmp
+__pycache__/
+*.pyc

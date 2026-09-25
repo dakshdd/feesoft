@@ -1,12 +1,16 @@
 from flask import Blueprint, render_template, request
-from db import master_collection
+from db import master_collection, get_school
 
 defaulter_bp = Blueprint("defaulter_bp", __name__)
 
 
 @defaulter_bp.route("/report", methods=["GET", "POST"])
 def defaulter_report():
+
+    school = get_school() or {}
+
     if request.method == "POST":
+
         class_name = request.form.get("class")
         section = request.form.get("section")
         month = request.form.get("month")
@@ -19,7 +23,9 @@ def defaulter_report():
         if section:
             query["sec"] = section
 
-        students = list(master_collection.find(query))
+        students = list(
+            master_collection.find(query)
+        )
 
         month_field = f"{month.lower()}_status"
 
@@ -28,10 +34,8 @@ def defaulter_report():
             if s.get(month_field, "Unpaid") != "Paid"
         ]
 
-        # Grand totals
         total_defaulters = len(defaulters)
 
-        # Safely handle balance_fee stored as number or string
         def get_balance(value):
             try:
                 return float(value or 0)
@@ -45,6 +49,7 @@ def defaulter_report():
 
         return render_template(
             "defaulter_report.html",
+            school=school,
             class_name=class_name,
             section=section,
             month=month,
@@ -58,6 +63,7 @@ def defaulter_report():
 
     return render_template(
         "defaulter_form.html",
+        school=school,
         classes=classes,
         sections=sections
     )

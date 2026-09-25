@@ -3,12 +3,12 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Fee Receipt</title>
+  <title>{{ school_name or "Fee Receipt" }}</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 20px;
-      background: #fff;
+      background: #fff
     }
 
     .card {
@@ -16,64 +16,96 @@
       padding: 20px;
       border-radius: 8px;
       max-width: 700px;
-      margin: auto;
-      background: #fff;
+      margin: auto
     }
 
     .header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px
     }
 
     .header img {
-      width: 100px;
-      height: auto;
+      width: 90px
     }
 
-    .header h2 {
-      flex: 1;
+    .school {
       text-align: center;
+      flex: 1
+    }
+
+    .school h2 {
       margin: 0;
+      font-size: 22px
+    }
+
+    .school p {
+      margin: 3px;
+      font-size: 13px
+    }
+
+    .title {
+      text-align: center;
+      margin: 12px 0;
+      font-size: 20px
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+      margin-top: 15px
     }
 
     th,
     td {
       border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
+      padding: 8px
     }
 
     th {
-      background: #f0f0f0;
+      background: #f0f0f0
     }
 
     .no-print {
-      margin-top: 15px;
+      margin-top: 15px
+    }
+
+    @media print {
+      .no-print {
+        display: none
+      }
+
+      body {
+        margin: 0
+      }
+
+      .card {
+        border: 0
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="card">
-    <!-- ✅ Logo Left + Title Center -->
+
     <div class="header">
-      <img src="/static/images/logo1.jpg" alt="School Logo">
-      <h2>Fee Receipt</h2>
+      <img src="/static/images/logo1.jpg" alt="Logo">
+      <div class="school">
+        <h2>{{ school_name }}</h2>
+        {% if school_address %}<p>📍 {{ school_address }}</p>{% endif %}
+        {% if school_phone %}<p>📞 {{ school_phone }}</p>{% endif %}
+      </div>
     </div>
-    <p><strong>Receipt No:</strong> {{ receipt_no }}</p>
-    <p><strong>Admission Code:</strong> {{ adm_code }} | <strong>Student Name:</strong> {{ student_name }}</p>
-    <p><strong>Class:</strong> {{ student_class }} <strong>Section:</strong> {{ section }}</p>
-    <p><strong>Father's Name:</strong> {{ father_name }}</p>
-    <p><strong>Date:</strong> {{ date }} | <strong>Month:</strong> {{ month }} | <strong>Payment Mode:</strong> {{
-      payment_mode }}</p>
+
+    <div class="title"><b>FEE RECEIPT</b></div>
+
+    <p><b>Receipt No:</b> {{ receipt_no }}</p>
+    <p><b>Admission:</b> {{ adm_code }} | <b>Student:</b> {{ student_name }}</p>
+    <p><b>Class:</b> {{ student_class }} | <b>Section:</b> {{ section }}</p>
+    <p><b>Father:</b> {{ father_name }}</p>
+    <p><b>Date:</b> {{ date }} | <b>Month:</b> {{ month }} | <b>Mode:</b> {{ payment_mode }}</p>
 
     <table>
       <tr>
@@ -81,75 +113,66 @@
         <th>Amount</th>
       </tr>
 
-      {% if month == "April" and admission_fee > 0 %}
+      {% if month=="April" and admission_fee>0 %}
       <tr>
         <td>Admission Fee</td>
         <td>{{ "%.2f"|format(admission_fee) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if month == "April" and annual_fee > 0 %}
+      {% if month=="April" and annual_fee>0 %}
       <tr>
         <td>Annual Fee</td>
         <td>{{ "%.2f"|format(annual_fee) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if tuition_fee > 0 %}
+      {% if tuition_fee>0 %}
       <tr>
         <td>Tuition Fee</td>
         <td>{{ "%.2f"|format(tuition_fee) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if transport_fee > 0 %}
+      {% if transport_fee>0 %}
       <tr>
         <td>Transport Fee</td>
         <td>{{ "%.2f"|format(transport_fee) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if devl_fee > 0 %}
+      {% if devl_fee>0 %}
       <tr>
         <td>Development Fee</td>
         <td>{{ "%.2f"|format(devl_fee) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if eclass > 0 %}
+      {% if eclass>0 %}
       <tr>
         <td>E-Class Fee</td>
         <td>{{ "%.2f"|format(eclass) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if science > 0 %}
+      {% if science>0 %}
       <tr>
         <td>Science Fee</td>
         <td>{{ "%.2f"|format(science) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if computer > 0 %}
+      {% if computer>0 %}
       <tr>
         <td>Computer Fee</td>
         <td>{{ "%.2f"|format(computer) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
-      {% if kgarten > 0 %}
+      {% if kgarten>0 %}
       <tr>
         <td>K.Garten Fee</td>
         <td>{{ "%.2f"|format(kgarten) }}</td>
-      </tr>
-      {% endif %}
+      </tr>{% endif %}
 
       <tr>
-        <td><strong>Paid</strong></td>
+        <td><b>Paid</b></td>
         <td>{{ "%.2f"|format(paid) }}</td>
       </tr>
       <tr>
-        <td><strong>Balance</strong></td>
+        <td><b>Balance</b></td>
         <td>{{ "%.2f"|format(balance) }}</td>
       </tr>
       <tr>
@@ -158,8 +181,9 @@
       </tr>
     </table>
 
-    <p style="text-align:right; margin-top:20px;">CASHIER SIGNATURE</p>
+    <p style="text-align:right;margin-top:20px">CASHIER SIGNATURE</p>
     <button class="no-print" onclick="window.print()">Print Receipt</button>
+
   </div>
 </body>
 

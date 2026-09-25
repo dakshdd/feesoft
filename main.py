@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
 from db import master_collection, counters_collection, transport_collection, tran_collection, users_collection, students_collection
-
+from db import get_school
 
 # ------------------ Import Blueprints ------------------
 from classrpt import classrpt_bp
@@ -52,7 +52,14 @@ def login():
 def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("base.html", role=session.get("role"))
+
+    school = get_school()
+
+    return render_template(
+        "base.html",
+        role=session.get("role"),
+        school=school
+    )
 
 
 @app.route("/welcome")
@@ -63,10 +70,12 @@ def home():
     female_count = students_collection.count_documents({"gender": "Female"})
     new_admissions = students_collection.count_documents(
         {"admission_year": 2026})
+    school = get_school()
     return render_template("welcome.html",
                            male=male_count,
                            female=female_count,
-                           new=new_admissions)
+                           new=new_admissions,
+                           school=school)
 
 
 @app.route("/logout")

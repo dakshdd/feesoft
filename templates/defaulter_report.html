@@ -2,18 +2,42 @@
 <html>
 
 <head>
-    <title>Defaulter Report</title>
+    <title>{{ school.school_name if school else "Defaulter Report" }}</title>
+
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #f4f6f9;
             margin: 0;
             padding: 20px;
+            color: #333
+        }
+
+        .school {
+            text-align: center;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            width: 90%;
+            margin: 0 auto 20px;
+            box-shadow: 0 3px 10px #0001
+        }
+
+        .school h1 {
+            margin: 0;
+            color: #2575fc;
+            font-size: 25px
+        }
+
+        .school p {
+            margin: 4px;
+            color: #666;
+            font-size: 14px
         }
 
         h2 {
             text-align: center;
-            color: #333;
+            color: #333
         }
 
         table {
@@ -23,39 +47,84 @@
             background: #fff;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px #0002
         }
 
         th,
         td {
             padding: 12px 15px;
-            text-align: center;
+            text-align: center
         }
 
         th {
             background: #2575fc;
             color: #fff;
-            font-size: 15px;
+            font-size: 15px
         }
 
         tr:nth-child(even) {
-            background: #f9f9f9;
+            background: #f9f9f9
         }
 
         tr:hover {
-            background: #eaf3ff;
+            background: #eaf3ff
         }
 
         .summary {
             text-align: center;
             margin-top: 20px;
             font-weight: bold;
-            color: #444;
+            color: #444
+        }
+
+        @media(max-width:600px) {
+            body {
+                padding: 10px
+            }
+
+            .school,
+            table {
+                width: 100%
+            }
+
+            .school h1 {
+                font-size: 20px
+            }
+
+            th,
+            td {
+                padding: 8px;
+                font-size: 12px
+            }
+        }
+
+        @media print {
+            body {
+                background: #fff
+            }
+
+            .school,
+            table {
+                box-shadow: none
+            }
         }
     </style>
 </head>
 
 <body>
+
+    <div class="school">
+        <h1>🏫 {{ school.school_name if school else "School Name" }}</h1>
+
+        {% if school and school.address %}
+        <p>📍 {{ school.address }}</p>
+        {% endif %}
+
+        {% if school and school.phone %}
+        <p>📞 {{ school.phone }}</p>
+        {% endif %}
+    </div>
+
     <h2>
         Defaulter Report -
         {% if class_name %}Class {{ class_name }}{% endif %}
@@ -70,6 +139,7 @@
             <th>Father</th>
             <th>Balance Fee</th>
         </tr>
+
         {% for s in defaulters %}
         <tr>
             <td>{{ s.adm_code }}</td>
@@ -81,8 +151,11 @@
     </table>
 
     <div class="summary">
-        Total Defaulters: {{ total_defaulters }} | Total Balance: ₹{{ total_balance }}
+        Total Defaulters: {{ total_defaulters }}
+        |
+        Total Balance: ₹{{ "%.2f"|format(total_balance) }}
     </div>
+
 </body>
 
 </html>

@@ -31,6 +31,10 @@ try:
     counters_collection = school_db["counters"]
     users_collection = school_db["users"]
     students_collection = school_db["students"]
+    school_collection = school_db["school_master"]
+
+    def get_school(school_id="SCHOOL001"):
+        return school_collection.find_one({"school_id": school_id})
 
     # TRANSPORT DATABASE
     transport_db = client["transport_db"]

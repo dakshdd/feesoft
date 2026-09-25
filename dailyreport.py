@@ -1,15 +1,35 @@
 from flask import Blueprint, request, render_template_string
 from datetime import datetime, timedelta
-from db import tran_collection
+from db import tran_collection, get_school
 
 dailyreport_bp = Blueprint("dailyreport_bp", __name__)
 
-layout = """<!DOCTYPE html><html><head><title>Daily Report</title><style>
-body{font-family:"Segoe UI";margin:0}.container{max-width:98%;margin:20px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 4px 10px #ddd;overflow-x:auto}
-h2{color:#2c3e50}input{padding:8px;border:1px solid #ccc;border-radius:5px}button{padding:8px 15px;background:#1abc9c;color:#fff;border:0;border-radius:5px;cursor:pointer;margin:3px}
-table{border-collapse:collapse;width:100%;margin-top:20px;font-size:14px;white-space:nowrap}th,td{border:1px solid #ddd;padding:8px;text-align:center}th{background:#2c3e50;color:#fff}
-tr:nth-child(even){background:#f9f9f9}.total-row{font-weight:bold;background:#d1f7d1!important}.cancelled{background:#ffcccc!important;color:#900;font-weight:bold}.month-total{font-weight:bold}
-</style></head><body><div class="container">{{content|safe}}</div></body></html>"""
+layout = """<!DOCTYPE html>
+<html>
+<head>
+<title>Daily Report</title>
+<style>
+body{font-family:"Segoe UI";margin:0;background:#f5f7fb}
+.container{max-width:98%;margin:20px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 4px 10px #ddd;overflow-x:auto}
+.school{text-align:center;border-bottom:1px solid #ddd;padding-bottom:12px;margin-bottom:15px}
+.school h1{margin:0;color:#2c3e50;font-size:24px}
+.school p{margin:3px;color:#666;font-size:13px}
+h2{color:#2c3e50}
+input{padding:8px;border:1px solid #ccc;border-radius:5px}
+button{padding:8px 15px;background:#1abc9c;color:#fff;border:0;border-radius:5px;cursor:pointer;margin:3px}
+table{border-collapse:collapse;width:100%;margin-top:20px;font-size:14px;white-space:nowrap}
+th,td{border:1px solid #ddd;padding:8px;text-align:center}
+th{background:#2c3e50;color:#fff}
+tr:nth-child(even){background:#f9f9f9}
+.total-row{font-weight:bold;background:#d1f7d1!important}
+.cancelled{background:#ffcccc!important;color:#900;font-weight:bold}
+.month-total{font-weight:bold}
+</style>
+</head>
+<body>
+<div class="container">{{content|safe}}</div>
+</body>
+</html>"""
 
 
 def safe_int(v):
@@ -19,23 +39,60 @@ def safe_int(v):
         return 0
 
 
+def school_header():
+    school = get_school() or {}
+    name = school.get("school_name", "")
+    address = school.get("address", "")
+    phone = school.get("phone", "")
+
+    return f"""
+    <div class="school">
+        <h1>🏫 {name}</h1>
+        <p>{address}</p>
+        {f'<p>📞 {phone}</p>' if phone else ''}
+    </div>
+    """
+
+
 @dailyreport_bp.route("/", methods=["GET", "POST"])
 def daily_report():
+
+    header = school_header()
+
     if request.method == "POST":
+
         date = request.form.get("report_date")
         typ = request.form.get("report_type", "combined")
 
         try:
             start = datetime.strptime(date, "%Y-%m-%d")
-            q = {"date": {"$gte": start, "$lt": start+timedelta(days=1)}}
+
+            q = {
+                "date": {
+                    "$gte": start,
+                    "$lt": start + timedelta(days=1)
+                }
+            }
+
             if typ in ("cash", "online"):
                 q["payment_mode"] = typ.title()
-            records = list(tran_collection.find(q).sort("date", 1))
+
+            records = list(
+                tran_collection.find(q).sort("date", 1)
+            )
+
         except Exception as e:
-            return render_template_string(layout, content=f"<h2>Error: {e}</h2>")
+            return render_template_string(
+                layout,
+                content=header + f"<h2>Error: {e}</h2>"
+            )
 
         if not records:
-            return render_template_string(layout, content=f"<h2>No {typ} transactions found for {date}</h2>")
+            return render_template_string(
+                layout,
+                content=header +
+                f"<h2>No {typ} transactions found for {date}</h2>"
+            )
 
         exclude = {
             "_id", "receipt_no", "payment_id", "adm_code", "student_name",
@@ -47,9 +104,9 @@ def daily_report():
 
         for r in records:
             for k, v in r.items():
+
                 key = str(k).lower().replace("_", " ").strip()
 
-                # Remove calculated/non-fee fields
                 if k in exclude or key in {
                     "total", "month total", "grand total",
                     "paid", "balance", "balance advance"
@@ -64,21 +121,38 @@ def daily_report():
 
         heads = sorted(heads)
 
-        name = {"cash": "Cash", "online": "Online",
-                "combined": "Combined"}.get(typ, "Combined")
+        name = {
+            "cash": "Cash",
+            "online": "Online",
+            "combined": "Combined"
+        }.get(typ, "Combined")
 
-        html = f"<h2>{name} Report for {date}</h2><table><tr>"
-        html += "<th>Receipt No</th><th>Adm No</th><th>Name</th><th>Class</th><th>Section</th>"
-        html += "".join(f"<th>{h.replace('_', ' ').title()}</th>" for h in heads)
+        html = header
+        html += f"<h2>{name} Report for {date}</h2>"
+        html += "<table><tr>"
+        html += "<th>Receipt No</th><th>Adm No</th><th>Name</th>"
+        html += "<th>Class</th><th>Section</th>"
+        html += "".join(
+            f"<th>{h.replace('_', ' ').title()}</th>"
+            for h in heads
+        )
         html += "<th>Month Total</th></tr>"
 
         totals = {h: 0 for h in heads}
         grand = 0
 
         for r in records:
-            mt = sum(safe_int(r.get(h)) for h in heads)
-            cls = "cancelled" if str(
-                r.get("status", "")).upper() == "CANCEL" else ""
+
+            mt = sum(
+                safe_int(r.get(h))
+                for h in heads
+            )
+
+            cls = (
+                "cancelled"
+                if str(r.get("status", "")).upper() == "CANCEL"
+                else ""
+            )
 
             html += f"<tr class='{cls}'>"
             html += f"<td>{r.get('receipt_no', '')}</td>"
@@ -96,18 +170,41 @@ def daily_report():
             grand += mt
 
         html += "<tr class='total-row'><td colspan='5'>NET TOTAL</td>"
-        html += "".join(f"<td>{totals[h]}</td>" for h in heads)
+
+        html += "".join(
+            f"<td>{totals[h]}</td>"
+            for h in heads
+        )
+
         html += f"<td>{grand}</td></tr></table>"
 
-        return render_template_string(layout, content=html)
+        return render_template_string(
+            layout,
+            content=html
+        )
 
-    form = """<h2>📅 Datewise Daily Report</h2>
+    form = header + """
+    <h2>📅 Datewise Daily Report</h2>
+
     <form method="POST">
-    <label>Select Date:</label>
-    <input type="date" name="report_date" required>
-    <button name="report_type" value="cash">Cash Report</button>
-    <button name="report_type" value="online">Online Report</button>
-    <button name="report_type" value="combined">Combined Report</button>
-    </form>"""
+        <label>Select Date:</label>
+        <input type="date" name="report_date" required>
 
-    return render_template_string(layout, content=form)
+        <button name="report_type" value="cash">
+            Cash Report
+        </button>
+
+        <button name="report_type" value="online">
+            Online Report
+        </button>
+
+        <button name="report_type" value="combined">
+            Combined Report
+        </button>
+    </form>
+    """
+
+    return render_template_string(
+        layout,
+        content=form
+    )
