@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Teacher Dashboard</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #f4f6fb
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976d2, #673ab7);
+            color: white;
+            padding: 22px
+        }
+
+        .header h2 {
+            margin: 0 0 6px
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 15px
+        }
+
+        .welcome,
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px #ddd
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px
+        }
+
+        .card {
+            text-decoration: none;
+            color: #222;
+            margin: 0
+        }
+
+        .icon {
+            font-size: 32px
+        }
+
+        .card h3 {
+            margin: 8px 0 5px
+        }
+
+        .card p {
+            margin: 0;
+            color: #666;
+            font-size: 13px
+        }
+
+        .logout {
+            display: block;
+            text-align: center;
+            background: #dc3545;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-decoration: none
+        }
+
+        @media(max-width:600px) {
+            .cards {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2>👩‍🏫 Teacher Dashboard</h2>
+        <div>{{ teacher_name }}</div>
+        <div>Class: <b>{{ teacher_class }} - {{ teacher_section }}</b></div>
+    </div>
+
+    <div class="container">
+
+        <div class="welcome">
+            <b>Welcome, {{ teacher_name }} 👋</b>
+            <div style="margin-top:5px;color:#666">Manage your class attendance</div>
+        </div>
+
+        <div class="cards">
+
+            <a href="{{ url_for('attendance_bp.attendance') }}" class="card">
+                <div class="icon">📋</div>
+                <h3>Mark Attendance</h3>
+                <p>Present / Absent / Leave</p>
+            </a>
+
+            <a href="{{ url_for('attendance_bp.attendance_report') }}" class="card">
+                <div class="icon">📊</div>
+                <h3>Attendance Report</h3>
+                <p>Monthly attendance</p>
+            </a>
+
+        </div>
+
+        <a href="{{ url_for('teacher_login_bp.teacher_logout') }}" class="logout">
+            🚪 Logout
+        </a>
+
+    </div>
+</body>
+
+</html>

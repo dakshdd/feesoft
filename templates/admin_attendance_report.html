@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+       <title>Monthly Attendance Report</title>
+       <meta name="viewport" content="width=device-width,initial-scale=1">
+
+       <style>
+              * {
+                     box-sizing: border-box
+              }
+
+              body {
+                     margin: 0;
+                     background: #f4f6fb;
+                     font-family: Arial
+              }
+
+              .header {
+                     background: linear-gradient(135deg, #1976d2, #673ab7);
+                     color: white;
+                     padding: 20px
+              }
+
+              .container {
+                     max-width: 1100px;
+                     margin: 20px auto;
+                     padding: 15px
+              }
+
+              .card {
+                     background: white;
+                     padding: 18px;
+                     border-radius: 12px;
+                     margin-bottom: 15px;
+                     box-shadow: 0 3px 10px #ddd
+              }
+
+              .filters {
+                     display: flex;
+                     gap: 10px;
+                     flex-wrap: wrap
+              }
+
+              select,
+              input,
+              button {
+                     padding: 10px;
+                     border: 1px solid #ddd;
+                     border-radius: 7px
+              }
+
+              button {
+                     background: #1976d2;
+                     color: white;
+                     border: 0;
+                     cursor: pointer
+              }
+
+              .print {
+                     background: #198754;
+                     text-decoration: none;
+                     color: white;
+                     padding: 10px 15px;
+                     border-radius: 7px;
+                     display: inline-block
+              }
+
+              table {
+                     width: 100%;
+                     border-collapse: collapse
+              }
+
+              th,
+              td {
+                     padding: 10px;
+                     border-bottom: 1px solid #eee;
+                     text-align: left
+              }
+
+              th {
+                     background: #f8fafc
+              }
+
+              @media(max-width:700px) {
+                     table {
+                            font-size: 12px
+                     }
+
+                     .container {
+                            padding: 8px
+                     }
+              }
+
+              @media print {
+
+                     .filters,
+                     .print {
+                            display: none
+                     }
+
+                     body {
+                            background: white
+                     }
+
+                     .card {
+                            box-shadow: none
+                     }
+              }
+       </style>
+</head>
+
+<body>
+
+       <div class="header">
+              <h2>📊 Monthly Attendance Report</h2>
+              <div>Admin Report</div>
+       </div>
+
+       <div class="container">
+
+              <div class="card">
+
+                     <form method="GET">
+
+                            <div class="filters">
+
+                                   <input type="month" name="month" value="{{ month }}">
+
+                                   <select name="class">
+                                          <option value="">All Classes</option>
+
+                                          {% for c in classes %}
+                                          <option value="{{ c }}" {% if c==selected_class %}selected{% endif %}>
+                                                 {{ c }}
+                                          </option>
+                                          {% endfor %}
+
+                                   </select>
+
+                                   <select name="section">
+                                          <option value="">All Sections</option>
+
+                                          {% for s in sections %}
+                                          <option value="{{ s }}" {% if s==selected_section %}selected{% endif %}>
+                                                 {{ s }}
+                                          </option>
+                                          {% endfor %}
+
+                                   </select>
+
+                                   <button type="submit">View Report</button>
+
+                                   <a href="#" onclick="window.print()" class="print">
+                                          🖨 Print
+                                   </a>
+
+                            </div>
+
+                     </form>
+
+              </div>
+
+              <div class="card">
+
+                     <table>
+
+                            <tr>
+                                   <th>Adm Code</th>
+                                   <th>Student</th>
+                                   <th>Class</th>
+                                   <th>Section</th>
+                                   <th>Present</th>
+                                   <th>Absent</th>
+                                   <th>Leave</th>
+                                   <th>Total</th>
+                                   <th>Attendance %</th>
+                            </tr>
+
+                            {% for x in report %}
+
+                            <tr>
+                                   <td>{{ x.adm_code }}</td>
+                                   <td>{{ x.student_name }}</td>
+                                   <td>{{ x.class }}</td>
+                                   <td>{{ x.section }}</td>
+                                   <td>{{ x.present }}</td>
+                                   <td>{{ x.absent }}</td>
+                                   <td>{{ x.leave }}</td>
+                                   <td>{{ x.total }}</td>
+                                   <td><b>{{ x.percentage }}%</b></td>
+                            </tr>
+
+                            {% else %}
+
+                            <tr>
+                                   <td colspan="9" style="text-align:center">
+                                          No students found
+                                   </td>
+                            </tr>
+
+                            {% endfor %}
+
+                     </table>
+
+              </div>
+
+       </div>
+
+</body>
+
+</html>

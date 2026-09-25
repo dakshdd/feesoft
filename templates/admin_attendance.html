@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Attendance</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: #f4f6fb;
+            font-family: Arial
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976d2, #673ab7);
+            color: white;
+            padding: 20px
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 15px
+        }
+
+        .card {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px #ddd
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        select,
+        input,
+        button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 7px
+        }
+
+        button {
+            background: #1976d2;
+            color: white;
+            border: 0;
+            cursor: pointer
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px
+        }
+
+        .stat {
+            text-align: center;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px
+        }
+
+        .stat b {
+            display: block;
+            font-size: 22px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left
+        }
+
+        @media(max-width:600px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            table {
+                font-size: 13px
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2>📊 Attendance</h2>
+        <div>Admin Attendance Report</div>
+    </div>
+
+    <div class="container">
+
+        <div class="card">
+
+            <form method="GET">
+
+                <div class="filters">
+
+                    <input type="date" name="date" value="{{ date }}">
+
+                    <select name="class">
+                        <option value="">All Classes</option>
+                        {% for c in classes %}
+                        <option value="{{ c }}" {% if c==selected_class %}selected{% endif %}>
+                            {{ c }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="section">
+                        <option value="">All Sections</option>
+                        {% for s in sections %}
+                        <option value="{{ s }}" {% if s==selected_section %}selected{% endif %}>
+                            {{ s }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="submit">View</button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        <div class="card">
+
+            <div class="stats">
+
+                <div class="stat">
+                    <b>{{ total }}</b>
+                    Total
+                </div>
+
+                <div class="stat">
+                    <b>{{ present }}</b>
+                    Present
+                </div>
+
+                <div class="stat">
+                    <b>{{ absent }}</b>
+                    Absent
+                </div>
+
+                <div class="stat">
+                    <b>{{ leave }}</b>
+                    Leave
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <table>
+
+                <tr>
+                    <th>Adm Code</th>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th>Section</th>
+                    <th>Status</th>
+                </tr>
+
+                {% for student in students %}
+
+                <tr>
+                    <td>{{ student.adm_code }}</td>
+                    <td>{{ student.student_name }}</td>
+                    <td>{{ student.class }}</td>
+                    <td>{{ student.sec }}</td>
+                    <td>{{ attendance_map.get(student.adm_code, "Not Marked") }}</td>
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

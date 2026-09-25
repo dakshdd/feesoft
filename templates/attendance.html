@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Mark Attendance</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .info {
+            background: #eef5ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .date-box {
+            margin-bottom: 20px;
+        }
+
+        input[type="date"] {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .student {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 8px;
+            border-bottom: 1px solid #eee;
+            gap: 10px;
+        }
+
+        .name {
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .options label {
+            cursor: pointer;
+        }
+
+        .save {
+            margin-top: 20px;
+            width: 100%;
+            padding: 13px;
+            border: 0;
+            border-radius: 8px;
+            background: #1976d2;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 7px;
+            margin-bottom: 15px;
+        }
+
+        @media(max-width:600px) {
+            .container {
+                margin: 10px;
+                padding: 10px;
+            }
+
+            .student {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h2>📋 Mark Attendance</h2>
+
+            <div class="info">
+                <b>Teacher:</b> {{ teacher_name }}<br>
+                <b>Class:</b> {{ teacher_class }} - {{ teacher_section }}<br>
+                <b>Total Students:</b> {{ students|length }}
+            </div>
+
+            {% if saved %}
+            <div class="success">
+                ✅ Attendance saved successfully!
+            </div>
+            {% endif %}
+
+            <form method="GET">
+
+                <div class="date-box">
+                    <b>Date:</b>
+                    <input type="date" name="date" value="{{ date }}" onchange="this.form.submit()">
+                </div>
+
+            </form>
+
+            {% if students %}
+
+            <form method="POST">
+
+                <input type="hidden" name="date" value="{{ date }}">
+
+                {% for student in students %}
+
+                {% set current_status = attendance_map.get(student.adm_code) %}
+
+                <div class="student">
+
+                    <div class="name">
+                        {{ loop.index }}. {{ student.student_name }}
+                        <small>({{ student.adm_code }})</small>
+                    </div>
+
+                    <div class="options">
+
+                        <label>
+                            <input type="radio" name="status_{{ student.adm_code }}" value="Present" {% if
+                                current_status=="Present" %}checked{% endif %}>
+                            P
+                        </label>
+
+                        <label>
+                            <input type="radio" name="status_{{ student.adm_code }}" value="Absent" {% if
+                                current_status=="Absent" %}checked{% endif %}>
+                            A
+                        </label>
+
+                        <label>
+                            <input type="radio" name="status_{{ student.adm_code }}" value="Leave" {% if
+                                current_status=="Leave" %}checked{% endif %}>
+                            L
+                        </label>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+                <button class="save" type="submit">
+                    💾 Save Attendance
+                </button>
+
+            </form>
+
+            {% else %}
+
+            <p>No students found for this class and section.</p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

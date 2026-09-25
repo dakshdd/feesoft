@@ -20,6 +20,8 @@ from app import master_bp   # Admission Entry blueprint
 from marks_entry import marks_entry_bp
 from report_card import report_card_bp
 from studledg_mob import studledg_mob_bp
+from teacher_login import teacher_login_bp
+from attendance import attendance_bp
 
 # from face_login import face_bp
 
@@ -154,6 +156,8 @@ app.register_blueprint(dailyreport_bp, url_prefix="/dailyreport")
 app.register_blueprint(defaulter_bp, url_prefix="/defaulter")
 app.register_blueprint(student_crud_bp, url_prefix="/mastmodi")
 app.register_blueprint(classrpt_bp, url_prefix="/classwise")
+app.register_blueprint(teacher_login_bp)
+app.register_blueprint(attendance_bp)
 # app.register_blueprint(face_bp)
 
 # ------------------ Run ------------------

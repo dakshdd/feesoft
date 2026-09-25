@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Attendance Report</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 25px auto;
+            padding: 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .1);
+            overflow-x: auto;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .info {
+            background: #eef5ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 9px 15px;
+            border: 0;
+            border-radius: 6px;
+            background: #1976d2;
+            color: white;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            min-width: 700px;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #f1f3f5;
+        }
+
+        td:nth-child(2) {
+            text-align: left;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h2>📊 Attendance Report</h2>
+
+            <div class="info">
+                <b>Teacher:</b> {{ teacher_name }}<br>
+                <b>Class:</b> {{ teacher_class }} - {{ teacher_section }}
+            </div>
+
+            <form method="GET">
+
+                <b>Month:</b>
+
+                <input type="month" name="month" value="{{ month }}">
+
+                <button type="submit">
+                    View Report
+                </button>
+
+            </form>
+
+            <table>
+
+                <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th>Present</th>
+                    <th>Absent</th>
+                    <th>Leave</th>
+                    <th>Total</th>
+                    <th>Attendance %</th>
+                </tr>
+
+                {% for student in report %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+                        <b>{{ student.student_name }}</b><br>
+                        <small>{{ student.adm_code }}</small>
+                    </td>
+
+                    <td>{{ student.present }}</td>
+
+                    <td>{{ student.absent }}</td>
+
+                    <td>{{ student.leave }}</td>
+
+                    <td>{{ student.total }}</td>
+
+                    <td>
+                        <b>{{ student.percentage }}%</b>
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="7">
+                        No students found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
