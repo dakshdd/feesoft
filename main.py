@@ -6,6 +6,7 @@ from datetime import timedelta
 from db import master_collection, counters_collection, transport_collection, tran_collection, users_collection, students_collection
 from db import get_school
 
+
 # ------------------ Import Blueprints ------------------
 from classrpt import classrpt_bp
 from student_crud import student_crud_bp
@@ -73,11 +74,7 @@ def home():
     new_admissions = students_collection.count_documents(
         {"admission_year": 2026})
     school = get_school()
-    return render_template("welcome.html",
-                           male=male_count,
-                           female=female_count,
-                           new=new_admissions,
-                           school=school)
+    return render_template("welcome.html", male_count=male_count, female_count=female_count, new_admissions=new_admissions, school=school)
 
 
 @app.route("/logout")

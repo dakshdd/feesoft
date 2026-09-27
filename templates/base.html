@@ -15,144 +15,116 @@
             color: white;
             border-radius: 12px;
             padding: 12px 18px;
-            margin-bottom: 15px;
+            margin-bottom: 15px
         }
 
         .school-name {
             font-size: 22px;
-            font-weight: 700;
+            font-weight: 700
         }
 
         .school-info {
             font-size: 13px;
-            opacity: .95;
+            opacity: .95
         }
     </style>
 </head>
 
 <body style="background-color:#0000ff60;">
 
-    <!-- Sidebar -->
-    <div class="sidebar bg-dark text-white p-3" style="width:250px; position:fixed; height:100vh; overflow-y:auto;">
+    <!-- SIDEBAR -->
+    <div class="sidebar bg-dark text-white p-3" style="width:250px;position:fixed;height:100vh;overflow-y:auto">
 
         <h2 class="text-center mb-4 fs-5">📊 MAIN MENU</h2>
 
         <ul class="list-unstyled">
 
-            <!-- Accounts -->
+            <!-- ACCOUNTS -->
             <li>
                 <a class="btn btn-gradient-primary w-100 mb-2 text-white" data-bs-toggle="collapse"
-                    href="#accountsMenu">
-                    💰 Accounts
-                </a>
+                    href="#accountsMenu">💰 Accounts</a>
 
                 <div class="collapse" id="accountsMenu">
                     <ul class="list-unstyled ms-3">
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('master_bp.index') }}"
-                                target="contentFrame">🧾 New Admission</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('fee_entry_bp.fee_home') }}"
-                                target="contentFrame">💵 Fee Entry</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('receipt_bp.receipt_home') }}"
-                                target="contentFrame">🧾 Re-Print Receipts</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('studledg_bp.ledger_home') }}"
-                                target="contentFrame">📘 Student Ledger</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('dailyreport_bp.daily_report') }}"
-                                target="contentFrame">📊 Daily Report</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('defaulter_bp.defaulter_report') }}"
-                                target="contentFrame">📉 Defaulter Report</a>
-                        </li>
+                        <li><a class="nav-link text-white" href="{{ url_for('master_bp.index') }}"
+                                target="contentFrame">🧾 New Admission</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('fee_entry_bp.fee_home') }}"
+                                target="contentFrame">💵 Fee Entry</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('receipt_bp.receipt_home') }}"
+                                target="contentFrame">🧾 Re-Print Receipts</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('studledg_bp.ledger_home') }}"
+                                target="contentFrame">📘 Student Ledger</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('dailyreport_bp.daily_report') }}"
+                                target="contentFrame">📊 Daily Report</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('defaulter_bp.defaulter_report') }}"
+                                target="contentFrame">📉 Defaulter Report</a></li>
                     </ul>
                 </div>
             </li>
 
-            <!-- Examination -->
+            <!-- EXAMINATION -->
             <li>
-                <a class="btn btn-gradient-success w-100 mb-2 text-white" data-bs-toggle="collapse" href="#examMenu">
-                    📅 Examination
-                </a>
+                <a class="btn btn-gradient-success w-100 mb-2 text-white" data-bs-toggle="collapse" href="#examMenu">📅
+                    Examination</a>
 
                 <div class="collapse" id="examMenu">
                     <ul class="list-unstyled ms-3">
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('marks_entry_bp.marks_home') }}"
-                                target="contentFrame">✍ Marks Entry</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('report_card_bp.card_home') }}"
-                                target="contentFrame">📄 Report Card</a>
-                        </li>
+                        <li><a class="nav-link text-white" href="{{ url_for('marks_entry_bp.marks_home') }}"
+                                target="contentFrame">✍ Marks Entry</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('report_card_bp.card_home') }}"
+                                target="contentFrame">📄 Report Card</a></li>
                     </ul>
                 </div>
             </li>
 
-            <!-- Utils -->
+            <!-- UTILS -->
             <li>
-                <a class="btn btn-gradient-warning w-100 mb-2 text-white" data-bs-toggle="collapse" href="#utilsMenu">
-                    ⚙️ Utils
-                </a>
+                <a class="btn btn-gradient-warning w-100 mb-2 text-white" data-bs-toggle="collapse" href="#utilsMenu">⚙️
+                    Utils</a>
 
                 <div class="collapse" id="utilsMenu">
                     <ul class="list-unstyled ms-3">
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('feestru_bp.structure_home') }}"
-                                target="contentFrame">💰 Fee Structure</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('transport_bp.transport_home') }}"
-                                target="contentFrame">🚍 Transport Master</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('student_crud_bp.home') }}"
-                                target="contentFrame">✏ Student Modify</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('classrpt_bp.class_report') }}"
-                                target="contentFrame">📋 Class Report</a>
-                        </li>
+                        <li><a class="nav-link text-white" href="{{ url_for('feestru_bp.structure_home') }}"
+                                target="contentFrame">💰 Fee Structure</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('transport_bp.transport_home') }}"
+                                target="contentFrame">🚍 Transport Master</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('student_crud_bp.home') }}"
+                                target="contentFrame">✏ Student Modify</a></li>
+                        <li><a class="nav-link text-white" href="{{ url_for('classrpt_bp.class_report') }}"
+                                target="contentFrame">📋 Class Report</a></li>
                     </ul>
                 </div>
             </li>
 
-            <!-- Academic -->
+            <!-- ACADEMIC -->
             <li>
-                <a class="btn btn-gradient-info w-100 mb-2 text-white" data-bs-toggle="collapse" href="#academicMenu">
-                    📖 Academic
-                </a>
+                <a class="btn btn-gradient-info w-100 mb-2 text-white" data-bs-toggle="collapse" href="#academicMenu">📖
+                    Academic</a>
 
                 <div class="collapse" id="academicMenu">
                     <ul class="list-unstyled ms-3">
+
+                        <li>
+                            <a class="nav-link text-white" href="{{ url_for('attendance_bp.attendance_entry') }}"
+                                target="contentFrame">
+                                📝 Attendance Entry
+                            </a>
+                        </li>
+
                         <li>
                             <a class="nav-link text-white" href="{{ url_for('attendance_bp.admin_attendance') }}"
                                 target="contentFrame">
-                                📊 Attendance
+                                📊 Attendance List
                             </a>
                         </li>
+
                         <li>
                             <a class="nav-link text-white" href="{{ url_for('attendance_bp.admin_attendance_report') }}"
                                 target="contentFrame">
-                                📈 Monthly Report
+                                📈 Attn. Monthly Report
                             </a>
                         </li>
+
                         <li>
                             <a class="nav-link text-white" href="#" target="contentFrame">📚 Syllabus</a>
                         </li>
@@ -160,52 +132,40 @@
                         <li>
                             <a class="nav-link text-white" href="#" target="contentFrame">📝 Assignments</a>
                         </li>
+
                     </ul>
                 </div>
             </li>
 
-            <!-- Transport -->
+            <!-- TRANSPORT -->
             <li>
                 <a class="btn btn-gradient-danger w-100 mb-2 text-white" data-bs-toggle="collapse"
-                    href="#transportMenu">
-                    🚍 Transport
-                </a>
+                    href="#transportMenu">🚍 Transport</a>
 
                 <div class="collapse" id="transportMenu">
                     <ul class="list-unstyled ms-3">
-                        <li>
-                            <a class="nav-link text-white" href="{{ url_for('transport_bp.transport_home') }}"
-                                target="contentFrame">🚌 Transport Master</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="#" target="contentFrame">📊 Transport Report</a>
-                        </li>
+                        <li><a class="nav-link text-white" href="{{ url_for('transport_bp.transport_home') }}"
+                                target="contentFrame">🚌 Transport Master</a></li>
+                        <li><a class="nav-link text-white" href="#" target="contentFrame">📊 Transport Report</a></li>
                     </ul>
                 </div>
             </li>
 
-            <!-- Management -->
+            <!-- MANAGEMENT -->
             <li>
                 <a class="btn btn-gradient-secondary w-100 mb-2 text-white" data-bs-toggle="collapse"
-                    href="#managementMenu">
-                    🏫 Management
-                </a>
+                    href="#managementMenu">🏫 Management</a>
 
                 <div class="collapse" id="managementMenu">
                     <ul class="list-unstyled ms-3">
-                        <li>
-                            <a class="nav-link text-white" href="#" target="contentFrame">👨‍💼 Staff Records</a>
-                        </li>
-
-                        <li>
-                            <a class="nav-link text-white" href="#" target="contentFrame">📈 Performance Reports</a>
+                        <li><a class="nav-link text-white" href="#" target="contentFrame">👨‍💼 Staff Records</a></li>
+                        <li><a class="nav-link text-white" href="#" target="contentFrame">📈 Performance Reports</a>
                         </li>
                     </ul>
                 </div>
             </li>
 
-            <!-- Admin -->
+            <!-- ADMIN -->
             {% if role == "admin" %}
             <li>
                 <a class="btn btn-gradient-secondary w-100 mb-2 text-white" href="{{ url_for('create_user') }}"
@@ -222,7 +182,7 @@
             </li>
             {% endif %}
 
-            <!-- Logout -->
+            <!-- LOGOUT -->
             <li>
                 <a href="{{ url_for('logout') }}" class="btn btn-danger w-100 mt-3">
                     🚪 Logout
@@ -232,12 +192,11 @@
         </ul>
     </div>
 
-    <!-- Content -->
-    <div class="content" style="margin-left:250px; padding:20px;">
+    <!-- CONTENT -->
+    <div class="content" style="margin-left:250px;padding:20px">
 
-        <!-- SCHOOL DETAILS FROM MONGODB -->
+        <!-- SCHOOL HEADER -->
         <div class="school-header">
-
             <div class="school-name">
                 🏫 {{ school.school_name if school else "School Name" }}
             </div>
@@ -248,50 +207,18 @@
                 &nbsp; | &nbsp; 📞 {{ school.phone }}
                 {% endif %}
             </div>
-
         </div>
 
-        <!-- User -->
+        <!-- USER -->
         <div class="d-flex justify-content-end align-items-center mb-3">
             <span class="badge bg-primary fs-6">
                 👤 Logged : {{ session['user'] }}
             </span>
         </div>
 
-        <!-- Cards -->
-        <div class="row mb-4">
 
-            <div class="col-md-2">
-                <div class="card text-white bg-info">
-                    <div class="card-body text-center p-2">
-                        <h6 class="card-title">👦 Male Students</h6>
-                        <p class="card-text fs-5">{{ male }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-2">
-                <div class="card text-white bg-danger">
-                    <div class="card-body text-center p-2">
-                        <h6 class="card-title">👧 Female Students</h6>
-                        <p class="card-text fs-5">{{ female }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-2">
-                <div class="card text-white bg-success">
-                    <div class="card-body text-center p-2">
-                        <h6 class="card-title">🆕 New Admissions</h6>
-                        <p class="card-text fs-5">{{ new }}</p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Iframe -->
-        <iframe name="contentFrame" src="{{ url_for('home') }}" style="width:100%; height:100vh; border:none;">
+        <!-- CONTENT FRAME -->
+        <iframe name="contentFrame" src="{{ url_for('home') }}" style="width:100%;height:100vh;border:none">
         </iframe>
 
     </div>

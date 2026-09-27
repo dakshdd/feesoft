@@ -60,11 +60,27 @@ FORM_HTML = """
   <meta charset="utf-8">
   <title>STUDENT MASTER ENTRY</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 20px; background::#0000ff60; }
+    body { font-family: 'Segoe UI', sans-serif; margin: 20px; background:#f3f8ff; }
     form { background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); max-width:1400px; margin:auto; }
     h1 { text-align:center; color:#2563eb; margin-bottom:20px; }
     .row { display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px; }
-    .field { flex:1; min-width:250px; display:flex; flex-direction:column; }
+    .field{
+    flex:1;
+    min-width:220px;
+    display:flex;
+    flex-direction:column;
+}
+
+/* Small amount/input boxes */
+.field.amount{
+    flex:0 0 120px;
+    min-width:120px;
+    max-width:120px;
+}
+
+.field.amount input{
+    text-align:center;
+}
     label { font-size:14px; margin-bottom:6px; font-weight:700; color:#374151; }
     input, select { padding:8px; border:1px solid #ccc; border-radius:6px; font-size:14px; }
     input[readonly] { background:#f9fafb; }
@@ -106,39 +122,58 @@ FORM_HTML = """
           <option value="STAFF">STAFF</option><option value="MANAG">MANAGEMENT</option>
         </select>
       </div>
+      <div class="field"><label for="gender">Gender</label>
+        <select id="gender" name="gender" required>
+          <option value="">-- Select Gender --</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
     </div>
 
     <!-- New Fields -->
-    <div class="row">
-      <div class="field"><label for="eclass">E-Class</label><input id="eclass" name="eclass"></div>
-      <div class="field"><label for="science">Science</label><input id="science" name="science"></div>
-      <div class="field"><label for="computer">Computer</label><input id="computer" name="computer"></div>
-      <div class="field"><label for="kgarten">K.Garten</label><input id="kgarten" name="kgarten"></div>
-    </div>
+<div class="row">
+
+  <div class="field amount">
+    <label for="eclass">E-Class</label>
+    <input type="number" id="eclass" name="eclass" value="0" min="0">
+  </div>
+
+  <div class="field amount">
+    <label for="science">Science</label>
+    <input type="number" id="science" name="science" value="0" min="0">
+  </div>
+
+  <div class="field amount">
+    <label for="computer">Computer</label>
+    <input type="number" id="computer" name="computer" value="0" min="0">
+  </div>
+
+  <div class="field amount">
+    <label for="kgarten">K.Garten</label>
+    <input type="number" id="kgarten" name="kgarten" value="0" min="0">
+  </div>
+
+
 
     <!-- Fees -->
     <div class="row">
-  <div class="field">
-    <label for="admission_fee">Admission Fee</label>
+  <div class="field amount"><label for="admission_fee">Admission Fee</label>
     <input id="admission_fee" name="admission_fee">
   </div>
-  <div class="field">
-    <label for="annual_fee">Annual Fee</label>
+  <div class="field amount"><label for="annual_fee">Annual Fee</label>
     <input id="annual_fee" name="annual_fee">
   </div>
-  <div class="field">
-    <label for="devl_fee">Development Fee</label>
+  <div class="field amount"><label for="devl_fee">Development Fee</label>
     <input id="devl_fee" name="devl_fee">
   </div>
 </div>
 
 <div class="row">
-  <div class="field">
-    <label for="discount">Discount On Tuition (Rs.)</label>
+  <div class="field amount"><label for="discount">Discount On Tuition (Rs.)</label>
     <input id="discount" name="discount" type="number" min="0" value="0">
   </div>
-  <div class="field">
-    <label for="tuition_fee">Tuition Fee (per month)</label>
+  <div class="field amount"><label for="tuition_fee">Tuition Fee (per month)</label>
     <input id="tuition_fee" name="tuition_fee" readonly>
   </div>
 </div>
@@ -168,8 +203,31 @@ FORM_HTML = """
       </div>
     </div>
 
-    <button type="submit">Save Student</button>
+    <button type="submit" id="saveBtn">Save Student</button>
   </form>
+  <script>
+window.addEventListener("pageshow", function (event) {
+    const btn = document.getElementById("saveBtn");
+
+    if (sessionStorage.getItem("studentSaving") === "1") {
+        btn.disabled = true;
+        btn.innerText = "Already Saved";
+    }
+});
+
+document.querySelector("form").addEventListener("submit", function () {
+    const btn = document.getElementById("saveBtn");
+
+    if (sessionStorage.getItem("studentSaving") === "1") {
+        return;
+    }
+
+    sessionStorage.setItem("studentSaving", "1");
+
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+});
+</script>
   <script>
   const feeData = {{ fee_data|tojson }};
   const classSelect = document.getElementById("class");
@@ -204,7 +262,8 @@ FORM_HTML = """
 def index():
     recent = list(master_collection.find({}, {
         "adm_code": 1, "student_name": 1, "class": 1,
-        "sec": 1, "catg": 1, "father_name": 1, "mother_name": 1,
+        "sec": 1, "catg": 1,
+        "gender": 1, "father_name": 1, "mother_name": 1,
         "address": 1, "contact": 1, "doa": 1, "photo": 1,
         "transport_stand": 1, "transport_charges": 1,
         "class_fee": 1, "admission_fee": 1, "annual_fee": 1, "devl_fee": 1,
@@ -289,6 +348,7 @@ def save_master():
         "class": request.form.get("class"),
         "sec": request.form.get("sec"),
         "catg": request.form.get("catg"),
+        "gender": request.form.get("gender"),
         "father_name": request.form.get("father_name"),
         "mother_name": request.form.get("mother_name"),
         "address": request.form.get("address"),

@@ -1,379 +1,217 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
-from db import master_collection, attendance_collection
+from flask import Blueprint, render_template, request, jsonify, session
+from db import master_collection
+from pymongo import MongoClient
 from datetime import datetime
+import os
 
 attendance_bp = Blueprint("attendance_bp", __name__)
 
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
 
-# ================= TEACHER ATTENDANCE =================
-@attendance_bp.route("/attendance", methods=["GET", "POST"])
-def attendance():
 
-    if not session.get("teacher_logged_in"):
-        return redirect(url_for("teacher_login_bp.teacher_login"))
+# ---------- Attendance Collection ----------
+def attendance_collection():
+    school_id = session.get("school_id", "school_db")
+    return client[school_id]["attendance"]
 
-    teacher_class = session.get("teacher_class")
-    teacher_section = session.get("teacher_section")
-    school_id = session.get("school_id")
 
-    date = request.values.get(
-        "date",
-        datetime.now().strftime("%Y-%m-%d")
+# ---------- Common ----------
+CLASSES = [
+    "Nursery", "LKG", "UKG",
+    "1st", "2nd", "3rd", "4th", "5th",
+    "6th", "7th", "8th", "9th", "10th",
+    "11th", "12th"
+]
+
+SECTIONS = ["A", "B", "C"]
+
+
+# ---------- Attendance Entry ----------
+@attendance_bp.route("/attendance_entry")
+def attendance_entry():
+    return render_template(
+        "attendance_entry.html",
+        classes=CLASSES,
+        sections=SECTIONS,
+        today=datetime.now().strftime("%Y-%m-%d")
     )
+
+
+# ---------- Load Students ----------
+@attendance_bp.route("/get_students")
+def get_students():
+
+    student_class = request.args.get("class", "").strip()
+    section = request.args.get("section", "").strip()
 
     students = list(
-        master_collection.find({
-            "class": teacher_class,
-            "sec": teacher_section
-        }).sort("student_name", 1)
+        master_collection.find(
+            {
+                "class": student_class,
+                "sec": section
+            },
+            {
+                "_id": 0,
+                "adm_code": 1,
+                "student_name": 1,
+                "photo": 1,
+                "class": 1,
+                "sec": 1
+            }
+        ).sort("adm_code", 1)
     )
 
-    # Save attendance
-    if request.method == "POST":
+    return jsonify(students)
 
-        for student in students:
 
-            adm_code = student.get("adm_code")
-            status = request.form.get(f"status_{adm_code}")
+# ---------- Save Attendance ----------
+@attendance_bp.route("/save_attendance", methods=["POST"])
+def save_attendance():
 
-            if status not in ["Present", "Absent", "Leave"]:
-                continue
+    data = request.json or {}
+    att_col = attendance_collection()
 
-            attendance_collection.update_one(
-                {
+    school_id = session.get("school_id", "school_db")
+
+    date = data.get("date")
+    student_class = data.get("class")
+    section = data.get("section")
+
+    for stu in data.get("students", []):
+
+        att_col.update_one(
+            {
+                "date": date,
+                "adm_code": stu["adm_code"]
+            },
+            {
+                "$set": {
                     "school_id": school_id,
                     "date": date,
-                    "adm_code": adm_code
-                },
-                {
-                    "$set": {
-                        "school_id": school_id,
-                        "date": date,
-                        "adm_code": adm_code,
-                        "student_name": student.get("student_name", ""),
-                        "class": teacher_class,
-                        "section": teacher_section,
-                        "status": status,
-                        "marked_by": session.get("teacher_id"),
-                        "marked_time": datetime.now().strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    }
-                },
-                upsert=True
-            )
-
-        return redirect(
-            url_for(
-                "attendance_bp.attendance",
-                date=date,
-                saved=1
-            )
+                    "class": student_class,
+                    "section": section,
+                    "adm_code": stu["adm_code"],
+                    "student_name": stu["student_name"],
+                    "status": stu["status"]
+                }
+            },
+            upsert=True
         )
 
-    # Load saved attendance
-    records = attendance_collection.find({
-        "school_id": school_id,
-        "date": date
+    return jsonify({
+        "success": True,
+        "message": "Attendance Saved Successfully"
     })
 
-    attendance_map = {
-        x["adm_code"]: x.get("status")
-        for x in records
-    }
 
-    return render_template(
-        "attendance.html",
-        students=students,
-        date=date,
-        teacher_name=session.get("teacher_name"),
-        teacher_class=teacher_class,
-        teacher_section=teacher_section,
-        attendance_map=attendance_map,
-        saved=request.args.get("saved")
-    )
+# ---------- Load Existing Attendance ----------
+@attendance_bp.route("/load_attendance")
+def load_attendance():
 
+    date = request.args.get("date")
+    student_class = request.args.get("class")
+    section = request.args.get("section")
 
-# ================= TEACHER MONTHLY REPORT =================
-@attendance_bp.route("/attendance-report")
-def attendance_report():
-
-    if not session.get("teacher_logged_in"):
-        return redirect(url_for("teacher_login_bp.teacher_login"))
-
-    teacher_class = session.get("teacher_class")
-    teacher_section = session.get("teacher_section")
-    school_id = session.get("school_id")
-
-    month = request.args.get(
-        "month",
-        datetime.now().strftime("%Y-%m")
-    )
-
-    year, mon = map(int, month.split("-"))
-
-    start_date = f"{month}-01"
-
-    if mon == 12:
-        next_year, next_month = year + 1, 1
-    else:
-        next_year, next_month = year, mon + 1
-
-    end_date = f"{next_year:04d}-{next_month:02d}-01"
-
-    students = list(
-        master_collection.find({
-            "class": teacher_class,
-            "sec": teacher_section
-        }).sort("student_name", 1)
-    )
-
-    records = attendance_collection.find({
-        "school_id": school_id,
-        "class": teacher_class,
-        "section": teacher_section,
-        "date": {
-            "$gte": start_date,
-            "$lt": end_date
-        }
-    })
-
-    attendance_data = {}
-
-    for record in records:
-
-        adm_code = record.get("adm_code")
-
-        if adm_code not in attendance_data:
-            attendance_data[adm_code] = {
-                "Present": 0,
-                "Absent": 0,
-                "Leave": 0
-            }
-
-        status = record.get("status")
-
-        if status in attendance_data[adm_code]:
-            attendance_data[adm_code][status] += 1
-
-    report = []
-
-    for student in students:
-
-        adm_code = student.get("adm_code")
-
-        data = attendance_data.get(
-            adm_code,
+    records = list(
+        attendance_collection().find(
             {
-                "Present": 0,
-                "Absent": 0,
-                "Leave": 0
+                "date": date,
+                "class": student_class,
+                "section": section
+            },
+            {
+                "_id": 0,
+                "adm_code": 1,
+                "status": 1
             }
         )
-
-        total = (
-            data["Present"] +
-            data["Absent"] +
-            data["Leave"]
-        )
-
-        percentage = (
-            round(data["Present"] / total * 100, 1)
-            if total else 0
-        )
-
-        report.append({
-            "adm_code": adm_code,
-            "student_name": student.get("student_name", ""),
-            "present": data["Present"],
-            "absent": data["Absent"],
-            "leave": data["Leave"],
-            "total": total,
-            "percentage": percentage
-        })
-
-    return render_template(
-        "attendance_report.html",
-        report=report,
-        month=month,
-        teacher_name=session.get("teacher_name"),
-        teacher_class=teacher_class,
-        teacher_section=teacher_section
     )
 
+    return jsonify(records)
 
-# ================= ADMIN ATTENDANCE =================
-@attendance_bp.route("/admin-attendance")
+
+# ---------- Attendance View ----------
+@attendance_bp.route("/admin_attendance")
 def admin_attendance():
 
-    if not session.get("user"):
-        return redirect(url_for("login"))
-
-    date = request.args.get(
-        "date",
-        datetime.now().strftime("%Y-%m-%d")
-    )
-
-    selected_class = request.args.get("class", "")
-    selected_section = request.args.get("section", "")
-
-    classes = sorted(master_collection.distinct("class"))
-    sections = sorted(master_collection.distinct("sec"))
-
-    query = {}
-
-    if selected_class:
-        query["class"] = selected_class
-
-    if selected_section:
-        query["sec"] = selected_section
-
-    students = list(
-        master_collection.find(query).sort("student_name", 1)
-    )
-
-    records = attendance_collection.find({
-        "date": date
-    })
-
-    attendance_map = {
-        x["adm_code"]: x.get("status")
-        for x in records
-    }
-
-    present = sum(
-        1 for x in students
-        if attendance_map.get(x.get("adm_code")) == "Present"
-    )
-
-    absent = sum(
-        1 for x in students
-        if attendance_map.get(x.get("adm_code")) == "Absent"
-    )
-
-    leave = sum(
-        1 for x in students
-        if attendance_map.get(x.get("adm_code")) == "Leave"
-    )
-
     return render_template(
-        "admin_attendance.html",
-        students=students,
-        attendance_map=attendance_map,
-        date=date,
-        classes=classes,
-        sections=sections,
-        selected_class=selected_class,
-        selected_section=selected_section,
-        present=present,
-        absent=absent,
-        leave=leave,
-        total=len(students)
-    )
-# ================= ADMIN MONTHLY REPORT =================
-
-
-@attendance_bp.route("/admin-attendance-report")
-def admin_attendance_report():
-    if not session.get("user"):
-        return redirect(url_for("login"))
-
-    month = request.args.get(
-        "month",
-        datetime.now().strftime("%Y-%m")
+        "attendance_view.html",
+        classes=CLASSES,
+        sections=SECTIONS,
+        today=datetime.now().strftime("%Y-%m-%d")
     )
 
-    selected_class = request.args.get("class", "")
-    selected_section = request.args.get("section", "")
 
-    year, mon = map(int, month.split("-"))
-    start_date = f"{month}-01"
+# ---------- Daily Attendance View API ----------
+@attendance_bp.route("/attendance_view_data")
+def attendance_view_data():
 
-    if mon == 12:
-        next_year, next_month = year + 1, 1
-    else:
-        next_year, next_month = year, mon + 1
+    date = request.args.get("date")
+    student_class = request.args.get("class")
+    section = request.args.get("section")
 
-    end_date = f"{next_year:04d}-{next_month:02d}-01"
-
-    classes = sorted(master_collection.distinct("class"))
-    sections = sorted(master_collection.distinct("sec"))
-
-    query = {}
-
-    if selected_class:
-        query["class"] = selected_class
-
-    if selected_section:
-        query["sec"] = selected_section
-
-    students = list(
-        master_collection.find(query).sort("student_name", 1)
-    )
-
-    records = attendance_collection.find({
-        "date": {
-            "$gte": start_date,
-            "$lt": end_date
-        }
-    })
-
-    data = {}
-
-    for r in records:
-        adm = r.get("adm_code")
-
-        if adm not in data:
-            data[adm] = {
-                "Present": 0,
-                "Absent": 0,
-                "Leave": 0
+    records = list(
+        attendance_collection().find(
+            {
+                "date": date,
+                "class": student_class,
+                "section": section
+            },
+            {
+                "_id": 0,
+                "adm_code": 1,
+                "student_name": 1,
+                "status": 1
             }
+        ).sort("adm_code", 1)
+    )
 
-        status = r.get("status")
+    return jsonify(records)
 
-        if status in data[adm]:
-            data[adm][status] += 1
 
-    report = []
-
-    for student in students:
-        adm = student.get("adm_code")
-
-        d = data.get(
-            adm,
-            {"Present": 0, "Absent": 0, "Leave": 0}
-        )
-
-        total = (
-            d["Present"] +
-            d["Absent"] +
-            d["Leave"]
-        )
-
-        percentage = (
-            round(d["Present"] / total * 100, 1)
-            if total else 0
-        )
-
-        report.append({
-            "adm_code": adm,
-            "student_name": student.get("student_name", ""),
-            "class": student.get("class", ""),
-            "section": student.get("sec", ""),
-            "present": d["Present"],
-            "absent": d["Absent"],
-            "leave": d["Leave"],
-            "total": total,
-            "percentage": percentage
-        })
+# ---------- Monthly Attendance Report ----------
+@attendance_bp.route("/admin_attendance_report")
+def admin_attendance_report():
 
     return render_template(
         "admin_attendance_report.html",
-        report=report,
-        month=month,
-        classes=classes,
-        sections=sections,
-        selected_class=selected_class,
-        selected_section=selected_section
+        classes=CLASSES,
+        sections=SECTIONS
     )
+
+
+# ---------- Monthly Report API ----------
+@attendance_bp.route("/monthly_attendance_data")
+def monthly_attendance_data():
+
+    month = request.args.get("month", "").strip()
+    student_class = request.args.get("class", "").strip()
+    section = request.args.get("section", "").strip()
+
+    if not month or not student_class or not section:
+        return jsonify([])
+
+    records = list(
+        attendance_collection().find(
+            {
+                "date": {
+                    "$regex": f"^{month}"
+                },
+                "class": student_class,
+                "section": section
+            },
+            {
+                "_id": 0,
+                "date": 1,
+                "adm_code": 1,
+                "student_name": 1,
+                "status": 1
+            }
+        ).sort([
+            ("adm_code", 1),
+            ("date", 1)
+        ])
+    )
+
+    return jsonify(records)
