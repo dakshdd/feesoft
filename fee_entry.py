@@ -127,6 +127,7 @@ def save_payment(adm, months, amount, mode, remark, late_fee_value=None):
     s = master_col.find_one({"adm_code": adm})
     if not s:
         return None, "Student not found"
+
     months = [m for m in MONTHS if m in set(months)]
     if not months:
         return None, "Please select at least one month"
@@ -137,124 +138,302 @@ def save_payment(adm, months, amount, mode, remark, late_fee_value=None):
     for m in months:
         original = month_detail(s, m)
         already = month_paid(adm, m)
-        outstanding = round(max(original["total"]-already, 0), 2)
+        outstanding = round(max(original["total"] - already, 0), 2)
+
         if outstanding <= 0:
             continue
 
         hp = month_head_paid(adm, m)
         heads = {}
+
         for h in HEADS:
             total = money(original[h])
             prev = money(hp.get(h, 0))
-            bal = round(max(total-prev, 0), 2)
-            if bal > 0:
-                heads[h] = {"total": total, "paid_before": prev,
-                            "paid": 0.0, "balance": bal}
-                heads_total[h] = round(heads_total[h]+bal, 2)
+            bal = round(max(total - prev, 0), 2)
 
-        details[m] = {"original_total": original["total"], "already_paid": already,
-                      "heads": heads, "total": outstanding, "paid": 0.0, "balance": outstanding}
+            if bal > 0:
+                heads[h] = {
+                    "total": total,
+                    "paid_before": prev,
+                    "paid": 0.0,
+                    "balance": bal
+                }
+                heads_total[h] = round(heads_total[h] + bal, 2)
+
+        details[m] = {
+            "original_total": original["total"],
+            "already_paid": already,
+            "heads": heads,
+            "total": outstanding,
+            "paid": 0.0,
+            "balance": outstanding
+        }
 
     if not details:
         return None, "Selected months are already fully paid"
 
-    is_balance = any(money(d["already_paid"]) > 0 for d in details.values())
     due = round(sum(d["balance"] for d in details.values()), 2)
     paid = money(amount)
 
     if paid <= 0:
         return None, "Please enter Paid Amount"
+
     if paid > due:
         return None, "Paid Amount cannot be greater than Amount Due"
 
-    student_balance = money(s.get("balance_fee", s.get("total_fee", 0)))
+    student_balance = money(
+        s.get("balance_fee", s.get("total_fee", 0))
+    )
+
     if paid > student_balance:
         return None, "Paid Amount cannot be greater than student balance"
 
     dt = datetime.datetime.now(IST).replace(tzinfo=None)
-    new_balance = round(max(student_balance-paid, 0), 2)
-    balance = round(max(due-paid, 0), 2)
+    new_balance = round(max(student_balance - paid, 0), 2)
+    balance = round(max(due - paid, 0), 2)
 
-    # BALANCE PAYMENT: no heads, no late fee
+    # CHECK IF THIS IS PAYMENT OF PREVIOUS PARTIAL BALANCE
+    is_balance = any(
+        money(d["already_paid"]) > 0
+        for d in details.values()
+    )
+
+    # =========================================================
+    # BALANCE PAYMENT
+    # =========================================================
     if is_balance:
+
+        remaining = paid
+        paid_heads = {h: 0.0 for h in HEADS}
+
+        for m, d in details.items():
+
+            if remaining <= 0:
+                break
+
+            mp = min(remaining, money(d["balance"]))
+
+            d["paid"] = round(mp, 2)
+            d["balance"] = round(
+                max(d["balance"] - mp, 0), 2
+            )
+
+            r = mp
+
+            for h in HEADS:
+                hb = money(
+                    d["heads"].get(h, {}).get("balance", 0)
+                )
+
+                hp = min(r, hb)
+
+                if h in d["heads"]:
+                    d["heads"][h]["paid"] = round(hp, 2)
+
+                paid_heads[h] = round(
+                    paid_heads[h] + hp, 2
+                )
+
+                r = round(r - hp, 2)
+
+                if r <= 0:
+                    break
+
+            remaining = round(
+                remaining - mp, 2
+            )
+
         t = {
-            "receipt_no": next_receipt(), "adm_code": adm,
-            "student_name": s.get("student_name", ""), "class": s.get("class", ""),
-            "section": s.get("section", s.get("sec", "")), "father_name": s.get("father_name", ""),
+            "receipt_no": next_receipt(),
+            "adm_code": adm,
+            "student_name": s.get("student_name", ""),
+            "class": s.get("class", ""),
+            "section": s.get("section", s.get("sec", "")),
+            "father_name": s.get("father_name", ""),
             "months": list(details),
-            "amount_paid": due, "paid_amount": paid, "paid": paid,
-            "balance_amount": balance, "balance": balance,
+            "month_details": details,
+            "head_totals": heads_total,
+            "paid_head_totals": paid_heads,
+            "amount_paid": due,
+            "paid_amount": paid,
+            "paid": paid,
+            "balance_amount": balance,
+            "balance": balance,
             "student_balance": new_balance,
-            "is_balance_payment": True, "payment_type": "Balance Payment",
-            "date": dt, "payment_mode": mode, "remark": remark, "month": None}
+            "is_balance_payment": True,
+            "payment_type": "Balance Payment",
+            "late_fee": 0,
+            "auto_late_fee": 0,
+            "date": dt,
+            "payment_mode": mode,
+            "remark": remark,
+            "month": list(details)[0]
+            if len(details) == 1 else None
+        }
+
         try:
             tran_collection.insert_one(t)
-            sets = {"balance_fee": new_balance}
+
+            sets = {
+                "balance_fee": new_balance
+            }
+
             for m, d in details.items():
-                sets[f"{m.lower()}_status"] = "Paid" if d["balance"] <= 0 else "Partial"
-            master_col.update_one({"adm_code": adm}, {
-                                  "$inc": {"paid_fee": paid}, "$set": sets})
+                sets[f"{m.lower()}_status"] = (
+                    "Paid"
+                    if d["balance"] <= 0
+                    else "Partial"
+                    if d["paid"] > 0
+                    else "Unpaid"
+                )
+
+            for h, v in paid_heads.items():
+                if v:
+                    sets[f"{h}_paid"] = round(
+                        money(s.get(f"{h}_paid", 0)) + v,
+                        2
+                    )
+
+            master_col.update_one(
+                {"adm_code": adm},
+                {
+                    "$inc": {"paid_fee": paid},
+                    "$set": sets
+                }
+            )
+
         except Exception as e:
             return None, f"Payment save failed: {e}"
+
         return t, None
+
+    # =========================================================
+    # NORMAL / NEW PAYMENT
+    # =========================================================
 
     remaining = paid
     paid_heads = {h: 0.0 for h in HEADS}
 
     for m, d in details.items():
+
         if remaining <= 0:
             break
-        mp = min(remaining, money(d["balance"]))
+
+        mp = min(
+            remaining,
+            money(d["balance"])
+        )
+
         d["paid"] = round(mp, 2)
-        d["balance"] = round(max(d["balance"]-mp, 0), 2)
+        d["balance"] = round(
+            max(d["balance"] - mp, 0), 2
+        )
+
         r = mp
 
         for h in HEADS:
-            hb = money(d["heads"].get(h, {}).get("balance", 0))
+
+            hb = money(
+                d["heads"].get(h, {}).get("balance", 0)
+            )
+
             hp = min(r, hb)
+
             if h in d["heads"]:
-                d["heads"][h]["paid"] = round(hp, 2)
-            paid_heads[h] = round(paid_heads[h]+hp, 2)
-            r = round(r-hp, 2)
+                d["heads"][h]["paid"] = round(
+                    hp, 2
+                )
+
+            paid_heads[h] = round(
+                paid_heads[h] + hp, 2
+            )
+
+            r = round(r - hp, 2)
+
             if r <= 0:
                 break
 
-        remaining = round(remaining-mp, 2)
+        remaining = round(
+            remaining - mp, 2
+        )
 
-    auto_fine = round(sum(late_fine(m, dt) for m in details), 2)
-    final_fine = max(money(late_fee_value),
-                     0) if late_fee_value is not None else auto_fine
-    late_details = {m: late_fine(m, dt) for m in details}
+    auto_fine = round(
+        sum(late_fine(m, dt) for m in details),
+        2
+    )
+
+    final_fine = (
+        max(money(late_fee_value), 0)
+        if late_fee_value is not None
+        else auto_fine
+    )
+
+    late_details = {
+        m: late_fine(m, dt)
+        for m in details
+    }
 
     t = {
-        "receipt_no": next_receipt(), "adm_code": adm,
-        "student_name": s.get("student_name", ""), "class": s.get("class", ""),
-        "section": s.get("section", s.get("sec", "")), "father_name": s.get("father_name", ""),
-        "months": list(details), "month_details": details,
-        "head_totals": heads_total, "paid_head_totals": paid_heads,
+        "receipt_no": next_receipt(),
+        "adm_code": adm,
+        "student_name": s.get("student_name", ""),
+        "class": s.get("class", ""),
+        "section": s.get("section", s.get("sec", "")),
+        "father_name": s.get("father_name", ""),
+        "months": list(details),
+        "month_details": details,
+        "head_totals": heads_total,
+        "paid_head_totals": paid_heads,
         "amount_paid": due,
-        "paid_amount": paid, "paid": paid,
-        "balance_amount": balance, "balance": balance,
-        "student_balance": new_balance, "month_total": due,
-        "is_balance_payment": False, "payment_type": "New Payment",
-        "late_fee": final_fine, "auto_late_fee": auto_fine,
-        "late_fee_details": late_details, "date": dt,
-        "payment_mode": mode, "remark": remark,
-        "month": list(details)[0] if len(details) == 1 else None}
+        "paid_amount": paid,
+        "paid": paid,
+        "balance_amount": balance,
+        "balance": balance,
+        "student_balance": new_balance,
+        "month_total": due,
+        "is_balance_payment": False,
+        "payment_type": "New Payment",
+        "late_fee": final_fine,
+        "auto_late_fee": auto_fine,
+        "late_fee_details": late_details,
+        "date": dt,
+        "payment_mode": mode,
+        "remark": remark,
+        "month": list(details)[0]
+        if len(details) == 1 else None
+    }
 
     try:
         tran_collection.insert_one(t)
-        sets = {"balance_fee": new_balance}
+
+        sets = {
+            "balance_fee": new_balance
+        }
 
         for m, d in details.items():
-            sets[f"{m.lower()}_status"] = "Paid" if d["balance"] <= 0 else "Partial" if d["paid"] > 0 else "Unpaid"
+            sets[f"{m.lower()}_status"] = (
+                "Paid"
+                if d["balance"] <= 0
+                else "Partial"
+                if d["paid"] > 0
+                else "Unpaid"
+            )
 
         for h, v in paid_heads.items():
             if v:
-                sets[f"{h}_paid"] = round(money(s.get(f"{h}_paid", 0))+v, 2)
+                sets[f"{h}_paid"] = round(
+                    money(s.get(f"{h}_paid", 0)) + v,
+                    2
+                )
 
-        master_col.update_one({"adm_code": adm}, {
-                              "$inc": {"paid_fee": paid}, "$set": sets})
+        master_col.update_one(
+            {"adm_code": adm},
+            {
+                "$inc": {"paid_fee": paid},
+                "$set": sets
+            }
+        )
+
     except Exception as e:
         return None, f"Payment save failed: {e}"
 
