@@ -29,6 +29,7 @@ try:
 
     # SCHOOL DATABASE
     school_db = client["school_db"]
+
     master_collection = school_db["master"]
     counters_collection = school_db["counters"]
     users_collection = school_db["users"]
@@ -57,10 +58,13 @@ try:
     transport = transport_collection
     tran = tran_collection
 
+    # Transaction index
+    # IMPORTANT:
+    # Same student + same month can have multiple payments.
+    # Therefore this index MUST NOT be unique.
     try:
         tran_collection.create_index(
-            [("adm_code", 1), ("month", 1)],
-            unique=True
+            [("adm_code", 1), ("month", 1)]
         )
         print("Transaction index verified")
     except Exception as e:

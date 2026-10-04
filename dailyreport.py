@@ -1,63 +1,102 @@
 from flask import Blueprint, request, render_template_string
-from datetime import datetime, timedelta
 from db import tran_collection, get_school
+from datetime import datetime, timedelta
 
 dailyreport_bp = Blueprint("dailyreport_bp", __name__)
 
-layout = """<!DOCTYPE html>
-<html>
-<head>
-<title>Daily Report</title>
+HEADS = {
+    "admission_fee": "Admission",
+    "annual_fee": "Annual",
+    "tuition_fee": "Tuition",
+    "transport_fee": "Transport",
+    "devl_fee": "Development",
+    "eclass": "E-Class",
+    "science": "Science",
+    "computer": "Computer",
+    "kgarten": "K.Garten"
+}
+
+CSS = """
 <style>
-body{font-family:"Segoe UI";margin:0;background:#f5f7fb}
-.container{max-width:98%;margin:20px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 4px 10px #ddd;overflow-x:auto}
-.school{text-align:center;border-bottom:1px solid #ddd;padding-bottom:12px;margin-bottom:15px}
-.school h1{margin:0;color:#2c3e50;font-size:24px}
-.school p{margin:3px;color:#666;font-size:13px}
-h2{color:#2c3e50}
-input{padding:8px;border:1px solid #ccc;border-radius:5px}
-button{padding:8px 15px;background:#1abc9c;color:#fff;border:0;border-radius:5px;cursor:pointer;margin:3px}
-table{border-collapse:collapse;width:100%;margin-top:20px;font-size:14px;white-space:nowrap}
-th,td{border:1px solid #ddd;padding:8px;text-align:center}
+body{font-family:Segoe UI;margin:0;background:#f5f7fb;color:#222}
+.container{max-width:98%;margin:15px auto;background:#fff;padding:15px;border-radius:8px;
+box-shadow:0 2px 8px #ddd;overflow:auto}
+.school{text-align:center;border-bottom:1px solid #ddd;padding-bottom:8px}
+.school h1{margin:0;font-size:22px;color:#2c3e50}
+.school p{margin:2px;color:#666;font-size:12px}
+h2{font-size:18px;color:#2c3e50}
+input{padding:7px;border:1px solid #ccc;border-radius:4px}
+button{padding:7px 12px;border:0;border-radius:4px;background:#1abc9c;color:white;
+cursor:pointer;margin:2px}
+table{border-collapse:collapse;width:100%;margin-top:15px;font-size:12px;white-space:nowrap}
+th,td{border:1px solid #ddd;padding:6px;text-align:center}
 th{background:#2c3e50;color:#fff}
-tr:nth-child(even){background:#f9f9f9}
-.total-row{font-weight:bold;background:#d1f7d1!important}
-.cancelled{background:#ffcccc!important;color:#900;font-weight:bold}
-.month-total{font-weight:bold}
+tr:nth-child(even){background:#fafafa}
+.total{font-weight:bold;background:#d8f5d8!important}
+.cancel{background:#ffd6d6!important;color:#900;font-weight:bold}
+.paid{font-weight:bold}
 </style>
-</head>
-<body>
-<div class="container">{{content|safe}}</div>
-</body>
-</html>"""
+"""
+
+LAYOUT = """
+<!doctype html><html><head>
+<title>Daily Report</title>{{css|safe}}
+</head><body><div class="container">{{content|safe}}</div></body></html>
+"""
 
 
-def safe_int(v):
+def num(v):
     try:
-        return int(float(v or 0))
+        return float(v or 0)
     except:
         return 0
 
 
-def school_header():
-    school = get_school() or {}
-    name = school.get("school_name", "")
-    address = school.get("address", "")
-    phone = school.get("phone", "")
+def fmt(v):
+    v = num(v)
+    return str(int(v)) if v == int(v) else f"{v:.2f}"
 
+
+def header():
+    s = get_school() or {}
     return f"""
     <div class="school">
-        <h1>🏫 {name}</h1>
-        <p>{address}</p>
-        {f'<p>📞 {phone}</p>' if phone else ''}
+        <h1>🏫 {s.get('school_name', '')}</h1>
+        <p>{s.get('address', '')}</p>
+        {f"<p>📞 {s.get('phone')}</p>" if s.get('phone') else ""}
     </div>
     """
+
+
+def head_value(r, key):
+    ht = r.get("head_totals") or {}
+
+    if key in ht:
+        return num(ht[key])
+
+    aliases = {
+        "admission_fee": ["admission", "admission_fee"],
+        "annual_fee": ["annual", "annual_fee"],
+        "tuition_fee": ["tuition", "tuition_fee"],
+        "transport_fee": ["transport", "transport_fee"],
+        "devl_fee": ["devl", "development", "development_fee"],
+        "eclass": ["eclass", "e_class", "eclass_fee"],
+        "science": ["science", "science_fee"],
+        "computer": ["computer", "computer_fee"],
+        "kgarten": ["kgarten", "k_garten", "kgarten_fee"]
+    }
+
+    for k in aliases.get(key, []):
+        if k in r:
+            return num(r[k])
+
+    return 0
 
 
 @dailyreport_bp.route("/", methods=["GET", "POST"])
 def daily_report():
 
-    header = school_header()
+    hd = header()
 
     if request.method == "POST":
 
@@ -65,17 +104,19 @@ def daily_report():
         typ = request.form.get("report_type", "combined")
 
         try:
-            start = datetime.strptime(date, "%Y-%m-%d")
+            d = datetime.strptime(date, "%Y-%m-%d")
 
             q = {
                 "date": {
-                    "$gte": start,
-                    "$lt": start + timedelta(days=1)
+                    "$gte": d,
+                    "$lt": d + timedelta(days=1)
                 }
             }
 
-            if typ in ("cash", "online"):
-                q["payment_mode"] = typ.title()
+            if typ == "cash":
+                q["payment_mode"] = "Cash"
+            elif typ == "online":
+                q["payment_mode"] = "Online"
 
             records = list(
                 tran_collection.find(q).sort("date", 1)
@@ -83,128 +124,146 @@ def daily_report():
 
         except Exception as e:
             return render_template_string(
-                layout,
-                content=header + f"<h2>Error: {e}</h2>"
+                LAYOUT, css=CSS,
+                content=hd+f"<h2>Error: {e}</h2>"
             )
 
         if not records:
             return render_template_string(
-                layout,
-                content=header +
-                f"<h2>No {typ} transactions found for {date}</h2>"
+                LAYOUT, css=CSS,
+                content=hd +
+                f"<h2>No {typ.title()} transactions found for {date}</h2>"
             )
 
-        exclude = {
-            "_id", "receipt_no", "payment_id", "adm_code", "student_name",
-            "class", "section", "month", "paid", "balance", "payment_mode",
-            "date", "status", "total", "month_total", "month total"
-        }
+        totals = {k: 0 for k in HEADS}
+        fee_total = 0
+        late_total = 0
+        paid_total = 0
+        balance_total = 0
 
-        heads = set()
-
-        for r in records:
-            for k, v in r.items():
-
-                key = str(k).lower().replace("_", " ").strip()
-
-                if k in exclude or key in {
-                    "total", "month total", "grand total",
-                    "paid", "balance", "balance advance"
-                }:
-                    continue
-
-                try:
-                    float(v)
-                    heads.add(k)
-                except:
-                    pass
-
-        heads = sorted(heads)
-
-        name = {
+        title = {
             "cash": "Cash",
             "online": "Online",
             "combined": "Combined"
         }.get(typ, "Combined")
 
-        html = header
-        html += f"<h2>{name} Report for {date}</h2>"
-        html += "<table><tr>"
-        html += "<th>Receipt No</th><th>Adm No</th><th>Name</th>"
-        html += "<th>Class</th><th>Section</th>"
-        html += "".join(
-            f"<th>{h.replace('_', ' ').title()}</th>"
-            for h in heads
-        )
-        html += "<th>Month Total</th></tr>"
+        cols = [
+            "Receipt", "Adm No", "Student",
+            "Class", "Sec", "Month"
+        ]
 
-        totals = {h: 0 for h in heads}
-        grand = 0
+        html = hd + f"""
+        <h2>📅 {title} Daily Report — {date}</h2>
+        <table>
+        <tr>
+        {''.join(f'<th>{c}</th>' for c in cols)}
+        {''.join(f'<th>{v}</th>' for v in HEADS.values())}
+        <th>Fee Total</th>
+        <th>Late Fee</th>
+        <th>Paid</th>
+        <th>Balance</th>
+        <th>Mode</th>
+        </tr>
+        """
 
         for r in records:
 
-            mt = sum(
-                safe_int(r.get(h))
-                for h in heads
-            )
+            cancelled = str(r.get("status", "")).upper() == "CANCEL"
+            cls = "cancel" if cancelled else ""
 
-            cls = (
-                "cancelled"
-                if str(r.get("status", "")).upper() == "CANCEL"
-                else ""
-            )
+            row_fee = 0
 
             html += f"<tr class='{cls}'>"
-            html += f"<td>{r.get('receipt_no', '')}</td>"
-            html += f"<td>{r.get('adm_code', '')}</td>"
-            html += f"<td>{r.get('student_name', '')}</td>"
-            html += f"<td>{r.get('class', '')}</td>"
-            html += f"<td>{r.get('section', '')}</td>"
 
-            for h in heads:
-                v = safe_int(r.get(h))
-                html += f"<td>{v}</td>"
-                totals[h] += v
+            html += f"""
+            <td>{r.get('receipt_no', '')}</td>
+            <td>{r.get('adm_code', '')}</td>
+            <td>{r.get('student_name', '')}</td>
+            <td>{r.get('class', '')}</td>
+            <td>{r.get('section', r.get('sec', ''))}</td>
+            <td>{r.get('month', '')}</td>
+            """
 
-            html += f"<td class='month-total'>{mt}</td></tr>"
-            grand += mt
+            for key in HEADS:
 
-        html += "<tr class='total-row'><td colspan='5'>NET TOTAL</td>"
+                v = head_value(r, key)
+                row_fee += v
 
-        html += "".join(
-            f"<td>{totals[h]}</td>"
-            for h in heads
-        )
+                html += f"<td>{fmt(v)}</td>"
 
-        html += f"<td>{grand}</td></tr></table>"
+                if not cancelled:
+                    totals[key] += v
+
+            late = num(r.get("late_fee", 0))
+
+            # ONLY PAID AMOUNT
+            paid = num(r.get("paid_amount", 0))
+
+            # fallback only for old records
+            if "paid_amount" not in r:
+                paid = num(r.get("amount_paid", r.get("paid", 0)))
+
+            fee = num(r.get("month_total", row_fee))
+
+            balance = num(
+                r.get(
+                    "balance_amount",
+                    r.get("balance", 0)
+                )
+            )
+
+            html += f"""
+            <td><b>{fmt(fee)}</b></td>
+            <td>{fmt(late)}</td>
+            <td class="paid">{fmt(paid)}</td>
+            <td>{fmt(balance)}</td>
+            <td>{r.get('payment_mode', '')}</td>
+            </tr>
+            """
+
+            if not cancelled:
+                fee_total += fee
+                late_total += late
+                paid_total += paid
+                balance_total += balance
+
+        html += f"""
+        <tr class="total">
+            <td colspan="6">NET TOTAL</td>
+            {''.join(
+            f'<td>{fmt(totals[k])}</td>'
+            for k in HEADS
+        )}
+            <td>{fmt(fee_total)}</td>
+            <td>{fmt(late_total)}</td>
+            <td>{fmt(paid_total)}</td>
+            <td>{fmt(balance_total)}</td>
+            <td>-</td>
+        </tr>
+        </table>
+        """
 
         return render_template_string(
-            layout,
+            LAYOUT,
+            css=CSS,
             content=html
         )
 
-    form = header + """
+    form = hd + """
     <h2>📅 Datewise Daily Report</h2>
 
     <form method="POST">
-        <label>Select Date:</label>
+        <label><b>Date:</b></label>
         <input type="date" name="report_date" required>
 
-        <button name="report_type" value="cash">
-            Cash Report
-        </button>
-
-        <button name="report_type" value="online">
-            Online Report
-        </button>
-
-        <button name="report_type" value="combined">
-            Combined Report
-        </button>
+        <button name="report_type" value="cash">Cash</button>
+        <button name="report_type" value="online">Online</button>
+        <button name="report_type" value="combined">Combined</button>
     </form>
     """
 
     return render_template_string(
-        layout,
+        LAYOUT,
+        css=CSS,
         content=form
     )

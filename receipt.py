@@ -5,101 +5,120 @@ from db import master_collection, tran_collection, get_school
 
 receipt_bp = Blueprint("receipt_bp", __name__)
 
-
 base_layout = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Re-Print Receipts</title>
-    <style>
-        body { font-family:"Segoe UI",sans-serif; margin:0; background:#f4f6f9; }
-        .container { max-width:900px; margin:40px auto; background:white; padding:30px;
-                     border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,.1); }
-        h2 { color:#2c3e50; margin-bottom:20px; }
-        form { margin-bottom:20px; }
-        input[type=text] { padding:10px; width:250px; border:1px solid #ccc; border-radius:5px; }
-        button { padding:10px 20px; background:#1abc9c; color:white;
-                 border:0; border-radius:5px; cursor:pointer; }
-        button:hover { background:#16a085; }
-        table { border-collapse:collapse; width:100%; margin-top:20px; }
-        th,td { border:1px solid #ddd; padding:12px; text-align:center; }
-        th { background:#2c3e50; color:white; }
-        tr:nth-child(even) { background:#f9f9f9; }
-        tr:hover { background:#eafaf9; }
-        a.print-btn { background:#3498db; color:white; padding:6px 12px;
-                      border-radius:5px; text-decoration:none; }
-    </style>
+<title>Re-Print Receipts</title>
+<style>
+body{font-family:"Segoe UI",sans-serif;margin:0;background:#f4f6f9}
+.container{max-width:900px;margin:40px auto;background:#fff;padding:30px;
+border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,.1)}
+h2{color:#2c3e50;margin-bottom:20px}
+form{margin-bottom:20px}
+input[type=text]{padding:10px;width:250px;border:1px solid #ccc;border-radius:5px}
+button{padding:10px 20px;background:#1abc9c;color:#fff;border:0;border-radius:5px;cursor:pointer}
+table{border-collapse:collapse;width:100%;margin-top:20px}
+th,td{border:1px solid #ddd;padding:10px;text-align:center}
+th{background:#2c3e50;color:#fff}
+tr:nth-child(even){background:#f9f9f9}
+a.print-btn{background:#3498db;color:#fff;padding:6px 12px;border-radius:5px;text-decoration:none}
+</style>
 </head>
-<body>
-    <div class="container">{{ content|safe }}</div>
-</body>
+<body><div class="container">{{content|safe}}</div></body>
 </html>
 """
 
 
 def prepare_receipt(receipt):
-    """Combine transaction data with student's master details.
-       Receipt always shows the values saved at payment time.
-    """
-
     student = master_collection.find_one({
         "adm_code": receipt.get("adm_code", "")
     }) or {}
 
     data = dict(receipt)
+    school = get_school() or {}
 
-    school = get_school()
+    # ---------------- MONTH FIX ----------------
+    months = data.get("months") or []
 
-    data["school_name"] = school.get("school_name", "") if school else ""
-    data["school_address"] = school.get("address", "") if school else ""
-    data["school_phone"] = school.get("phone", "") if school else ""
+    if not months and data.get("month"):
+        months = [data.get("month")]
 
-    # Student Details (master se update)
-    data["student_name"] = student.get(
-        "student_name",
-        data.get("student_name", "")
+    if not months and data.get("month_details"):
+        months = list(data.get("month_details", {}).keys())
+
+    months = [str(m) for m in months if m]
+
+    data["months"] = months
+    data["selected_month"] = ", ".join(months) if months else "N/A"
+    # --------------------------------------------
+
+    data.update({
+        "school_name": school.get("school_name", ""),
+        "school_address": school.get("address", ""),
+        "school_phone": school.get("phone", ""),
+        "student_name": student.get(
+            "student_name", data.get("student_name", "")
+        ),
+        "student_class": student.get(
+            "class", data.get("class", "")
+        ),
+        "father_name": student.get(
+            "father_name", data.get("father_name", "")
+        ),
+        "section": student.get(
+            "section", data.get("section", "")
+        ),
+        "payment_mode": data.get(
+            "payment_mode",
+            data.get("mode", "Cash")
+        )
+    })
+
+    for key in [
+        "admission_fee", "annual_fee", "tuition_fee",
+        "transport_fee", "devl_fee", "eclass",
+        "science", "computer", "kgarten"
+    ]:
+        data[key] = float(data.get(key, 0) or 0)
+
+    paid_amount = float(
+        data.get("paid_amount", data.get("paid", 0)) or 0
     )
 
-    data["student_class"] = student.get(
-        "class",
-        data.get("class", "")
+    amount_paid = float(
+        data.get("amount_paid", 0) or 0
     )
 
-    data["father_name"] = student.get(
-        "father_name",
-        data.get("father_name", "")
+    balance_amount = float(
+        data.get("balance_amount", data.get("balance", 0)) or 0
     )
 
-    data["section"] = student.get(
-        "section",
-        data.get("section", "")
-    )
+    # Fallback for old receipts
+    if not amount_paid:
+        details = data.get("month_details") or {}
 
-    # Payment Mode
-    data["payment_mode"] = data.get(
-        "payment_mode",
-        data.get("mode", "Cash")
-    )
+        if details:
+            amount_paid = round(sum(
+                float(x.get("total", 0) or 0)
+                for x in details.values()
+            ), 2)
 
-    # ✅ Receipt ke fee heads transaction se hi lo.
-    data["admission_fee"] = float(data.get("admission_fee", 0) or 0)
-    data["annual_fee"] = float(data.get("annual_fee", 0) or 0)
-    data["tuition_fee"] = float(data.get("tuition_fee", 0) or 0)
-    data["transport_fee"] = float(data.get("transport_fee", 0) or 0)
-    data["devl_fee"] = float(data.get("devl_fee", 0) or 0)
-    data["eclass"] = float(data.get("eclass", 0) or 0)
-    data["science"] = float(data.get("science", 0) or 0)
-    data["computer"] = float(data.get("computer", 0) or 0)
-    data["kgarten"] = float(data.get("kgarten", 0) or 0)
+    if not balance_amount and amount_paid:
+        balance_amount = max(
+            round(amount_paid - paid_amount, 2), 0
+        )
+
+    data["amount_paid"] = amount_paid
+    data["paid_amount"] = paid_amount
+    data["balance_amount"] = balance_amount
 
     return data
 
 
 @receipt_bp.route("/home", methods=["GET", "POST"])
 def receipt_home():
-
     if request.method == "POST":
-
         receipt_no = escape(
             request.form.get("receipt_no", "").strip()
         )
@@ -114,21 +133,19 @@ def receipt_home():
                 content=f"<h2>No receipt found for Receipt No: {receipt_no}</h2>"
             )
 
-        receipt = prepare_receipt(receipt)
-
         return render_template(
             "receipt.html",
-            **receipt
+            **prepare_receipt(receipt)
         )
 
     form_html = """
-        <h2>🔎 Re-Print by Receipt No</h2>
-        <form method="POST">
-            <label>Receipt Number:</label>
-            <input type="text" name="receipt_no"
-                   placeholder="e.g. REC-00001" required>
-            <button type="submit">Search & Print</button>
-        </form>
+    <h2>🔎 Re-Print by Receipt No</h2>
+    <form method="POST">
+        <label>Receipt Number:</label>
+        <input type="text" name="receipt_no"
+               placeholder="e.g. REC-00001" required>
+        <button type="submit">Search & Print</button>
+    </form>
     """
 
     return render_template_string(
@@ -139,7 +156,6 @@ def receipt_home():
 
 @receipt_bp.route("/", methods=["GET", "POST"])
 def receipts_home():
-
     if request.method == "POST":
 
         adm_code = escape(
@@ -158,35 +174,49 @@ def receipts_home():
                 content=f"<h2>No receipts found for Admission No: {adm_code}</h2>"
             )
 
-        table_html = (
-            f"<h2>Receipts for Admission No: {adm_code}</h2>"
-            "<table>"
-            "<tr>"
-            "<th>ID</th>"
-            "<th>Month</th>"
-            "<th>Date</th>"
-            "<th>Paid</th>"
-            "<th>Balance</th>"
-            "<th>Action</th>"
-            "</tr>"
-        )
+        table_html = """
+        <h2>Receipts for Admission No: {}</h2>
+        <table>
+        <tr>
+            <th>ID</th>
+            <th>Month</th>
+            <th>Date</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Action</th>
+        </tr>
+        """.format(adm_code)
 
         for r in receipts:
 
-            table_html += (
-                f"<tr>"
-                f"<td>{str(r.get('_id'))[:6]}</td>"
-                f"<td>{r.get('month', '')}</td>"
-                f"<td>{r.get('date', '')}</td>"
-                f"<td>{r.get('paid', 0)}</td>"
-                f"<td>{r.get('balance', 0)}</td>"
-                f"<td>"
-                f"<a class='print-btn' "
-                f"href='/receipts/print/{r.get('_id')}' "
-                f"target='_blank'>🖨️ Print</a>"
-                f"</td>"
-                f"</tr>"
-            )
+            months = r.get("months") or []
+
+            if not months and r.get("month"):
+                months = [r.get("month")]
+
+            if not months and r.get("month_details"):
+                months = list(
+                    r.get("month_details", {}).keys()
+                )
+
+            month_text = ", ".join(
+                str(m) for m in months if m
+            ) or "N/A"
+
+            table_html += f"""
+            <tr>
+                <td>{str(r.get('_id'))[:6]}</td>
+                <td>{month_text}</td>
+                <td>{r.get('date', '')}</td>
+                <td>₹{float(r.get('paid_amount', r.get('paid', 0)) or 0):.2f}</td>
+                <td>₹{float(r.get('balance_amount', r.get('balance', 0)) or 0):.2f}</td>
+                <td>
+                    <a class="print-btn"
+                       href="/receipts/print/{r.get('_id')}"
+                       target="_blank">🖨️ Print</a>
+                </td>
+            </tr>
+            """
 
         table_html += "</table>"
 
@@ -196,13 +226,13 @@ def receipts_home():
         )
 
     form_html = """
-        <h2>🔎 Re-Print by Admission No</h2>
-        <form method="POST">
-            <label>Admission Number:</label>
-            <input type="text" name="admission_no"
-                   placeholder="e.g. ADM-0019" required>
-            <button type="submit">Search</button>
-        </form>
+    <h2>🔎 Re-Print by Admission No</h2>
+    <form method="POST">
+        <label>Admission Number:</label>
+        <input type="text" name="admission_no"
+               placeholder="e.g. ADM-0019" required>
+        <button type="submit">Search</button>
+    </form>
     """
 
     return render_template_string(
@@ -224,9 +254,7 @@ def print_receipt(receipt_id):
     if not receipt:
         return "<h2>Receipt not found</h2>"
 
-    receipt = prepare_receipt(receipt)
-
     return render_template(
         "receipt.html",
-        **receipt
+        **prepare_receipt(receipt)
     )

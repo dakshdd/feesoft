@@ -7,3 +7,5 @@ build/
 *.tmp
 __pycache__/
 *.pyc
+feesoft/
+__pycache__/

@@ -3,86 +3,220 @@
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Fee Entry</title>
+
   <style>
+    * {
+      box-sizing: border-box
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background: #0000ff00;
+      background: #f4f6f9;
       margin: 0;
-      padding: 20px;
+      padding: 15px
     }
 
     .card {
-      background: #0000ff60;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 900px;
+      background: #fff;
+      padding: 18px;
+      border-radius: 10px;
+      max-width: 950px;
       margin: auto;
+      box-shadow: 0 3px 12px #0002
     }
 
     h2 {
-      margin-top: 0;
+      margin: 0 0 15px;
+      color: #2575fc
     }
 
     input,
     select,
     button {
       padding: 8px;
-      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px
     }
 
-    .success {
-      background: #d1fae5;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 5px;
-    }
-
-    .error {
-      background: #fecaca;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 5px;
+    #searchBox {
+      width: 100%
     }
 
     #studentList {
       width: 100%;
-      margin-top: 10px;
+      margin-top: 8px
     }
 
-    table {
-      border-collapse: collapse;
-      margin-top: 10px;
+    .months {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+      margin-top: 12px
     }
 
-    th,
-    td {
-      border: 1px solid #ccc;
-      padding: 6px;
-      text-align: left;
+    .month {
+      padding: 9px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fafafa
+    }
+
+    .month.paid {
+      background: #e5e7eb;
+      color: #777
+    }
+
+    .info {
+      background: #eef6ff;
+      padding: 10px;
+      border-radius: 7px;
+      margin-top: 12px
+    }
+
+    .paybox {
+      margin-top: 12px;
+      padding: 13px;
+      background: #f8fafc;
+      border-radius: 8px
+    }
+
+    button {
+      background: #2575fc;
+      color: #fff;
+      border: 0;
+      cursor: pointer
+    }
+
+    button:disabled {
+      background: #999;
+      cursor: not-allowed
+    }
+
+    .success,
+    .error {
+      padding: 9px;
+      margin-bottom: 10px;
+      border-radius: 5px
+    }
+
+    .success {
+      background: #d1fae5
+    }
+
+    .error {
+      background: #fecaca
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666
+    }
+
+    .amount {
+      color: #2575fc;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: underline
+    }
+
+    @media(max-width:650px) {
+      .months {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      body {
+        padding: 8px
+      }
+
+      .card {
+        padding: 12px
+      }
     }
   </style>
 </head>
 
 <body>
+
   <div class="card">
     <h2>Fee Entry</h2>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for category, msg in messages %}
-    <div class="{{ 'error' if category == 'error' else 'success' }}">{{ msg }}</div>
+
+    {% with messages=get_flashed_messages(with_categories=true) %}
+    {% for category,msg in messages %}
+    <div class="{{'error' if category=='error' else 'success'}}">{{msg}}</div>
     {% endfor %}
-    {% endif %}
     {% endwith %}
 
-    <label>Search Student Name / Admission Code</label>
-    <input type="text" id="searchBox" placeholder="Type student name or admission code...">
-    <select id="studentList" size="6"></select>
+    <label><b>Search Student</b></label>
+    <input id="searchBox" type="text" placeholder="Student name / Admission Code..." autocomplete="off">
+
+    <select id="studentList" size="5"></select>
 
     <div id="details"></div>
+
+    <div id="monthBox" style="display:none">
+
+      <h3>Select Months</h3>
+      <div class="months" id="months"></div>
+
+      <div class="info">
+        <b>Selected Balance:</b> ₹<span id="selectedTotal">0.00</span><br>
+        <b>Student Balance:</b> ₹<span id="studentBalance">0.00</span>
+      </div>
+
+      <div class="amount-box">
+
+        <label>Total Amount</label>
+        <input id="amount" type="number" step="0.01" readonly>
+
+        <label>Paid Amount</label>
+        <input id="paidAmount" type="number" step="0.01" min="0" value="0">
+
+        <label>Balance Amount</label>
+        <input id="balanceAmount" type="number" step="0.01" readonly>
+
+        <label>Late Fee</label>
+        <input id="lateFee" type="number" step="0.01" min="0">
+      </div>
+      <div class="small">
+        Auto ₹5/day after 10th. You can edit it.
+      </div>
+
+      <br>
+
+      <label><b>Payment Mode</b></label><br>
+      <select id="mode">
+        <option>Cash</option>
+        <option>Online</option>
+        <option>Cheque</option>
+        <option>UPI</option>
+      </select>
+
+      <br><br>
+
+      <label><b>Remark</b></label><br>
+      <input id="remark" type="text" style="width:90%">
+
+      <br><br>
+
+      <button id="saveBtn">Save Payment</button>
+
+    </div>
+  </div>
   </div>
 
-  <script src="{{ url_for('static', filename='fee_entry.js') }}"></script>
+  <script>
+    window.FEE_URLS = {
+      autocomplete: "{{url_for('fee_entry_bp.autocomplete')}}",
+      details: "{{url_for('fee_entry_bp.student_details')}}",
+      monthTotal: "{{url_for('fee_entry_bp.month_total')}}",
+      pay: "{{url_for('fee_entry_bp.api_pay')}}"
+    };
+  </script>
+
+  <script src="{{url_for('static',filename='fee_entry.js')}}"></script>
+
 </body>
 
 </html>

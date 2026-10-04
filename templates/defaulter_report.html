@@ -1,85 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 
 <head>
     <title>{{ school.school_name if school else "Defaulter Report" }}</title>
-
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #f4f6f9;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             color: #333
         }
 
         .school {
             text-align: center;
             background: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            width: 90%;
-            margin: 0 auto 20px;
-            box-shadow: 0 3px 10px #0001
+            padding: 12px;
+            border-radius: 8px;
+            width: 94%;
+            margin: auto auto 15px;
+            box-shadow: 0 2px 8px #0001
         }
 
         .school h1 {
             margin: 0;
             color: #2575fc;
-            font-size: 25px
+            font-size: 22px
         }
 
         .school p {
-            margin: 4px;
+            margin: 3px;
             color: #666;
-            font-size: 14px
+            font-size: 12px
         }
 
         h2 {
             text-align: center;
-            color: #333
+            font-size: 18px
         }
 
         table {
-            width: 90%;
-            margin: 20px auto;
+            width: 94%;
+            margin: 15px auto;
             border-collapse: collapse;
             background: #fff;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px #0002
+            box-shadow: 0 3px 10px #0002
         }
 
         th,
         td {
-            padding: 12px 15px;
-            text-align: center
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 13px
         }
 
         th {
             background: #2575fc;
-            color: #fff;
-            font-size: 15px
+            color: #fff
         }
 
         tr:nth-child(even) {
             background: #f9f9f9
         }
 
-        tr:hover {
-            background: #eaf3ff
-        }
-
         .summary {
             text-align: center;
-            margin-top: 20px;
-            font-weight: bold;
-            color: #444
+            margin: 15px;
+            font-weight: bold
         }
 
         @media(max-width:600px) {
             body {
-                padding: 10px
+                padding: 8px
             }
 
             .school,
@@ -87,14 +80,10 @@
                 width: 100%
             }
 
-            .school h1 {
-                font-size: 20px
-            }
-
             th,
             td {
-                padding: 8px;
-                font-size: 12px
+                padding: 6px;
+                font-size: 11px
             }
         }
 
@@ -115,21 +104,15 @@
 
     <div class="school">
         <h1>🏫 {{ school.school_name if school else "School Name" }}</h1>
-
-        {% if school and school.address %}
-        <p>📍 {{ school.address }}</p>
-        {% endif %}
-
-        {% if school and school.phone %}
-        <p>📞 {{ school.phone }}</p>
-        {% endif %}
+        {% if school and school.address %}<p>📍 {{ school.address }}</p>{% endif %}
+        {% if school and school.phone %}<p>📞 {{ school.phone }}</p>{% endif %}
     </div>
 
     <h2>
         Defaulter Report -
         {% if class_name %}Class {{ class_name }}{% endif %}
         {% if section %} Section {{ section }}{% endif %}
-        ({{ month }})
+        {% if month %} ({{ month }}){% endif %}
     </h2>
 
     <table>
@@ -137,7 +120,9 @@
             <th>Adm Code</th>
             <th>Name</th>
             <th>Father</th>
-            <th>Balance Fee</th>
+            <th>Total Fee</th>
+            <th>Paid</th>
+            <th>Balance</th>
         </tr>
 
         {% for s in defaulters %}
@@ -145,14 +130,29 @@
             <td>{{ s.adm_code }}</td>
             <td>{{ s.student_name }}</td>
             <td>{{ s.father_name }}</td>
-            <td>₹{{ s.balance_fee }}</td>
+            <td>₹{{ "%.2f"|format(s.total_fee|default(0)|float) }}</td>
+            <td>₹{{ "%.2f"|format(s.paid_fee|default(0)|float) }}</td>
+            <td>₹{{ "%.2f"|format(s.balance_fee|default(0)|float) }}</td>
         </tr>
         {% endfor %}
+
+        {% if defaulters %}
+        <tr style="font-weight:bold;background:#e8f5e9">
+            <td colspan="3">TOTAL</td>
+            <td>₹{{ "%.2f"|format(total_fee) }}</td>
+            <td>₹{{ "%.2f"|format(total_paid) }}</td>
+            <td>₹{{ "%.2f"|format(total_balance) }}</td>
+        </tr>
+        {% endif %}
     </table>
 
     <div class="summary">
         Total Defaulters: {{ total_defaulters }}
-        |
+        &nbsp; | &nbsp;
+        Total Fee: ₹{{ "%.2f"|format(total_fee) }}
+        &nbsp; | &nbsp;
+        Total Paid: ₹{{ "%.2f"|format(total_paid) }}
+        &nbsp; | &nbsp;
         Total Balance: ₹{{ "%.2f"|format(total_balance) }}
     </div>
 

@@ -1,21 +1,25 @@
+```html
 <!doctype html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ school_name or "Fee Receipt" }}</title>
+
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 20px;
-      background: #fff
+      background: #fff;
+      color: #222
     }
 
     .card {
       border: 1px solid #ccc;
       padding: 20px;
       border-radius: 8px;
-      max-width: 700px;
+      max-width: 750px;
       margin: auto
     }
 
@@ -51,6 +55,10 @@
       font-size: 20px
     }
 
+    .info {
+      line-height: 1.7
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -67,8 +75,19 @@
       background: #f0f0f0
     }
 
+    .total {
+      font-size: 17px;
+      font-weight: bold
+    }
+
     .no-print {
-      margin-top: 15px
+      margin-top: 15px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 5px;
+      background: #2575fc;
+      color: #fff;
+      cursor: pointer
     }
 
     @media print {
@@ -101,87 +120,158 @@
 
     <div class="title"><b>FEE RECEIPT</b></div>
 
-    <p><b>Receipt No:</b> {{ receipt_no }}</p>
-    <p><b>Admission:</b> {{ adm_code }} | <b>Student:</b> {{ student_name }}</p>
-    <p><b>Class:</b> {{ student_class }} | <b>Section:</b> {{ section }}</p>
-    <p><b>Father:</b> {{ father_name }}</p>
-    <p><b>Date:</b> {{ date }} | <b>Month:</b> {{ month }} | <b>Mode:</b> {{ payment_mode }}</p>
+    <div class="info">
+      <p><b>Receipt No:</b> {{ receipt_no }}</p>
+
+      <p>
+        <b>Admission:</b> {{ adm_code }}
+        &nbsp;|&nbsp;
+        <b>Student:</b> {{ student_name }}
+      </p>
+
+      <p>
+        <b>Class:</b> {{ student_class }}
+        {% if section %}&nbsp;|&nbsp;<b>Section:</b> {{ section }}{% endif %}
+      </p>
+
+      <p><b>Father:</b> {{ father_name }}</p>
+
+      <p>
+        <b>Date:</b> {{ date }}
+        &nbsp;|&nbsp;
+        <b>Mode:</b> {{ payment_mode }}
+      </p>
+      {% if months %}
+      <p>
+        <b>
+          {% if is_balance_payment %}
+          Balance Payment Month{% if months|length > 1 %}s{% endif %}:
+          {% else %}
+          Selected Month{% if months|length > 1 %}s{% endif %}:
+          {% endif %}
+        </b>
+        {{ months|join(", ") }}
+      </p>
+      {% endif %}
+    </div>
+
+    {% set ap=amount_paid|float %}
+    {% set pp=paid_amount|float %}
+    {% set ba=balance_amount|float %}
+    {% set ht=head_totals or {} %}
+
+    {% set admission=ht.get("admission_fee",0)|float %}
+    {% set annual=ht.get("annual_fee",0)|float %}
+    {% set tuition=ht.get("tuition_fee",0)|float %}
+    {% set transport=ht.get("transport_fee",0)|float %}
+    {% set devl=ht.get("devl_fee",0)|float %}
+    {% set eclass=ht.get("eclass",0)|float %}
+    {% set science=ht.get("science",0)|float %}
+    {% set computer=ht.get("computer",0)|float %}
+    {% set kgarten=ht.get("kgarten",0)|float %}
 
     <table>
       <tr>
-        <th>Head</th>
+        <th>Fee Head</th>
         <th>Amount</th>
       </tr>
 
-      {% if month=="April" and admission_fee>0 %}
+      {% if admission > 0 %}
       <tr>
         <td>Admission Fee</td>
-        <td>{{ "%.2f"|format(admission_fee) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(admission) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if month=="April" and annual_fee>0 %}
+      {% if annual > 0 %}
       <tr>
         <td>Annual Fee</td>
-        <td>{{ "%.2f"|format(annual_fee) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(annual) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if tuition_fee>0 %}
+      {% if tuition > 0 %}
       <tr>
         <td>Tuition Fee</td>
-        <td>{{ "%.2f"|format(tuition_fee) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(tuition) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if transport_fee>0 %}
+      {% if transport > 0 %}
       <tr>
         <td>Transport Fee</td>
-        <td>{{ "%.2f"|format(transport_fee) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(transport) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if devl_fee>0 %}
+      {% if devl > 0 %}
       <tr>
         <td>Development Fee</td>
-        <td>{{ "%.2f"|format(devl_fee) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(devl) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if eclass>0 %}
+      {% if eclass > 0 %}
       <tr>
         <td>E-Class Fee</td>
-        <td>{{ "%.2f"|format(eclass) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(eclass) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if science>0 %}
+      {% if science > 0 %}
       <tr>
         <td>Science Fee</td>
-        <td>{{ "%.2f"|format(science) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(science) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if computer>0 %}
+      {% if computer > 0 %}
       <tr>
         <td>Computer Fee</td>
-        <td>{{ "%.2f"|format(computer) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(computer) }}</td>
+      </tr>
+      {% endif %}
 
-      {% if kgarten>0 %}
+      {% if kgarten > 0 %}
       <tr>
         <td>K.Garten Fee</td>
-        <td>{{ "%.2f"|format(kgarten) }}</td>
-      </tr>{% endif %}
+        <td>₹{{ "%.2f"|format(kgarten) }}</td>
+      </tr>
+      {% endif %}
 
       <tr>
-        <td><b>Paid</b></td>
-        <td>{{ "%.2f"|format(paid) }}</td>
+        <th>FEE TOTAL</th>
+        <td>₹{{ "%.2f"|format(month_total|float) }}</td>
       </tr>
       <tr>
-        <td><b>Balance</b></td>
-        <td>{{ "%.2f"|format(balance) }}</td>
+        <th>PAID AMOUNT</th>
+        <td>₹{{ "%.2f"|format(paid_amount|float) }}</td>
       </tr>
+      <tr>
+        <th>BALANCE AMOUNT</th>
+        <td>₹{{ "%.2f"|format(balance_amount|float) }}</td>
+      </tr>
+
+      {% if late_fee|float > 0 %}
+      <tr>
+        <td><b>Late Fee / Fine</b></td>
+        <td><b>₹{{ "%.2f"|format(late_fee|float) }}</b></td>
+      </tr>
+      {% endif %}
+
+      {% if remark %}
       <tr>
         <td>Remark</td>
         <td>{{ remark }}</td>
       </tr>
+      {% endif %}
+
     </table>
 
-    <p style="text-align:right;margin-top:20px">CASHIER SIGNATURE</p>
+    <p style="text-align:right;margin-top:25px">
+      CASHIER SIGNATURE
+    </p>
+
     <button class="no-print" onclick="window.print()">Print Receipt</button>
 
   </div>
