@@ -1,4 +1,6 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
+import os
+import requests
 from db import master_collection, counters_collection, tran_collection, master_col, get_school
 from pymongo import ReturnDocument
 from datetime import timezone, timedelta
@@ -10,6 +12,50 @@ MONTHS = ["April", "May", "June", "July", "August", "September",
           "October", "November", "December", "January", "February", "March"]
 HEADS = ["admission_fee", "annual_fee", "tuition_fee", "transport_fee",
          "devl_fee", "eclass", "science", "computer", "kgarten"]
+
+
+# WhatsApp Cloud API settings. Configure these in Render/local Environment Variables.
+WA_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
+WA_PHONE_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+WA_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v23.0")
+WA_TEMPLATE = os.getenv("WHATSAPP_FEE_TEMPLATE", "fee_payment_confirmation")
+WA_LANGUAGE = os.getenv("WHATSAPP_TEMPLATE_LANGUAGE", "en_US")
+
+
+def _wa_number(v):
+    n = "".join(c for c in str(v or "") if c.isdigit())
+    if len(n) == 10:
+        n = "91" + n
+    return n if len(n) >= 10 else ""
+
+
+def send_fee_whatsapp(student, t):
+    if not WA_TOKEN or not WA_PHONE_ID:
+        return False, "WhatsApp credentials not configured"
+    phone = (student.get("whatsapp") or student.get("whatsapp_no") or
+             student.get("parent_whatsapp") or student.get("parent_phone") or
+             student.get("contact") or student.get("mobile") or student.get("phone") or "")
+    phone = _wa_number(phone)
+    if not phone:
+        return False, "Parent WhatsApp number not found"
+    months = ", ".join(t.get("months", [])) or "-"
+    params = [student.get("student_name", "Student"), student.get("adm_code", t.get("adm_code", "")),
+              months, f"₹{money(t.get('amount_paid', 0)):.2f}", f"₹{money(t.get('paid_amount', 0)):.2f}",
+              f"₹{money(t.get('balance_amount', 0)):.2f}", str(t.get("receipt_no", ""))]
+    payload = {"messaging_product": "whatsapp", "to": phone, "type": "template",
+               "template": {"name": WA_TEMPLATE, "language": {"code": WA_LANGUAGE},
+                            "components": [{"type": "body", "parameters": [{"type": "text", "text": str(x)} for x in params]}]}}
+    try:
+        r = requests.post(f"https://graph.facebook.com/{WA_API_VERSION}/{WA_PHONE_ID}/messages",
+                          headers={"Authorization": f"Bearer {WA_TOKEN}",
+                                   "Content-Type": "application/json"},
+                          json=payload, timeout=10)
+        data = r.json() if r.content else {}
+        if r.ok and data.get("messages"):
+            return True, data["messages"][0].get("id", "")
+        return False, data.get("error", {}).get("message", r.text[:300])
+    except Exception as e:
+        return False, str(e)
 
 
 def money(v):
@@ -198,50 +244,20 @@ def save_payment(adm, months, amount, mode, remark, late_fee_value=None):
         for d in details.values()
     )
 
-    # =========================================================
     # BALANCE PAYMENT
-    # =========================================================
     if is_balance:
-
         remaining = paid
-        paid_heads = {h: 0.0 for h in HEADS}
 
         for m, d in details.items():
-
             if remaining <= 0:
                 break
 
             mp = min(remaining, money(d["balance"]))
 
             d["paid"] = round(mp, 2)
-            d["balance"] = round(
-                max(d["balance"] - mp, 0), 2
-            )
+            d["balance"] = round(max(d["balance"] - mp, 0), 2)
 
-            r = mp
-
-            for h in HEADS:
-                hb = money(
-                    d["heads"].get(h, {}).get("balance", 0)
-                )
-
-                hp = min(r, hb)
-
-                if h in d["heads"]:
-                    d["heads"][h]["paid"] = round(hp, 2)
-
-                paid_heads[h] = round(
-                    paid_heads[h] + hp, 2
-                )
-
-                r = round(r - hp, 2)
-
-                if r <= 0:
-                    break
-
-            remaining = round(
-                remaining - mp, 2
-            )
+            remaining = round(remaining - mp, 2)
 
         t = {
             "receipt_no": next_receipt(),
@@ -252,8 +268,6 @@ def save_payment(adm, months, amount, mode, remark, late_fee_value=None):
             "father_name": s.get("father_name", ""),
             "months": list(details),
             "month_details": details,
-            "head_totals": heads_total,
-            "paid_head_totals": paid_heads,
             "amount_paid": due,
             "paid_amount": paid,
             "paid": paid,
@@ -267,32 +281,20 @@ def save_payment(adm, months, amount, mode, remark, late_fee_value=None):
             "date": dt,
             "payment_mode": mode,
             "remark": remark,
-            "month": list(details)[0]
-            if len(details) == 1 else None
+            "month": list(details)[0] if len(details) == 1 else None
         }
 
         try:
             tran_collection.insert_one(t)
 
-            sets = {
-                "balance_fee": new_balance
-            }
+            sets = {"balance_fee": new_balance}
 
             for m, d in details.items():
                 sets[f"{m.lower()}_status"] = (
-                    "Paid"
-                    if d["balance"] <= 0
-                    else "Partial"
-                    if d["paid"] > 0
+                    "Paid" if d["balance"] <= 0
+                    else "Partial" if d["paid"] > 0
                     else "Unpaid"
                 )
-
-            for h, v in paid_heads.items():
-                if v:
-                    sets[f"{h}_paid"] = round(
-                        money(s.get(f"{h}_paid", 0)) + v,
-                        2
-                    )
 
             master_col.update_one(
                 {"adm_code": adm},
@@ -512,7 +514,11 @@ def api_pay():
     if e:
         return jsonify({"success": False, "error": e}), 400
 
+    student = master_col.find_one({"adm_code": adm}) or {}
+    wa_ok, wa_info = send_fee_whatsapp(student, t)
+
     return jsonify({"success": True, "receipt_no": t["receipt_no"], "months": t["months"],
+                    "whatsapp_sent": wa_ok, "whatsapp_error": "" if wa_ok else wa_info,
                     "amount_paid": t["amount_paid"], "paid_amount": t["paid_amount"],
                     "balance_amount": t["balance_amount"], "paid": t["paid_amount"],
                     "balance": t["balance_amount"], "student_balance": t["student_balance"],
@@ -543,6 +549,12 @@ def receive_payment():
     if e:
         flash(e, "error")
         return redirect(url_for("fee_entry_bp.fee_entry", adm_code=adm))
+
+    # Payment is already saved. WhatsApp failure never cancels the fee transaction.
+    student = master_col.find_one({"adm_code": adm}) or {}
+    wa_ok, wa_info = send_fee_whatsapp(student, t)
+    if not wa_ok and wa_info != "WhatsApp credentials not configured":
+        print(f"WhatsApp fee confirmation failed for {adm}: {wa_info}")
 
     school = get_school() or {}
     return render_template("receipt.html", school_name=school.get("school_name", "School"),

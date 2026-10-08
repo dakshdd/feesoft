@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Teacher Homework</title>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Segoe UI, Arial;
+            background: #f4f7fb;
+            color: #222
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 25px auto;
+            padding: 20px
+        }
+
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 3px 15px #0001;
+            margin-bottom: 20px
+        }
+
+        .header h2 {
+            margin: 0 0 6px;
+            color: #1d4ed8
+        }
+
+        .header p {
+            margin: 4px 0;
+            color: #555
+        }
+
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 3px 15px #0001;
+            margin-bottom: 20px
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #1d4ed8
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 6px 0 12px;
+            font-size: 15px
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 18px;
+            background: #1d4ed8;
+            color: white;
+            font-size: 15px;
+            cursor: pointer
+        }
+
+        .cancel {
+            background: #777
+        }
+
+        .item {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 12px;
+            background: #fafafa
+        }
+
+        .item h4 {
+            margin: 0 0 8px;
+            color: #111
+        }
+
+        .item p {
+            margin: 6px 0;
+            color: #555
+        }
+
+        .actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px
+        }
+
+        .edit {
+            background: #f59e0b
+        }
+
+        .delete {
+            background: #dc2626
+        }
+
+        .flash {
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #d1fae5;
+            color: #065f46;
+            margin-bottom: 15px
+        }
+
+        @media(max-width:600px) {
+            .row {
+                grid-template-columns: 1fr
+            }
+
+            .container {
+                padding: 10px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h2>📝 Homework</h2>
+            <p><b>Teacher:</b> {{ teacher_name }}</p>
+            <p><b>Class:</b> {{ teacher_class }}{% if teacher_section %} - {{ teacher_section }}{% endif %}</p>
+        </div>
+
+        {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for category,message in messages %}
+
+        <div class="flash">{{ message }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <div class="card">
+            <h3>{% if edit %}✏️ Edit Homework{% else %}➕ Add Homework{% endif %}</h3>
+
+            <form method="POST"
+                action="{% if edit %}{{ url_for('homework_bp.teacher_homework_edit',id=edit._id) }}{% else %}{{ url_for('homework_bp.teacher_homework_add') }}{% endif %}">
+
+                <div class="row">
+                    <div>
+                        <label><b>Subject</b></label>
+                        <input type="text" name="subject" required value="{{ edit.subject if edit else '' }}">
+                    </div>
+
+                    <div>
+                        <label><b>Given Date</b></label>
+                        <input type="date" name="given_date" required value="{{ edit.given_date if edit else '' }}">
+                    </div>
+                </div>
+
+                <label><b>Due Date</b></label> <input type="date" name="due_date"
+                    value="{{ edit.due_date if edit else '' }}">
+
+                <label><b>Homework / Description</b></label>
+
+                <textarea name="description" required>{{ edit.description if edit else '' }}</textarea>
+
+                <button type="submit">
+                    {% if edit %}Update Homework{% else %}Add Homework{% endif %}
+                </button>
+
+                {% if edit %} <a href="{{ url_for('homework_bp.teacher_homework') }}"> <button type="button"
+                        class="cancel">Cancel</button> </a>
+                {% endif %}
+
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>📚 Homework List</h3>
+
+            {% if homework %}
+            {% for h in homework %}
+
+            <div class="item">
+
+                <h4>{{ h.subject }}</h4>
+
+                <p><b>Homework:</b> {{ h.description }}</p>
+
+                <p>
+                    <b>Given:</b> {{ h.given_date }}
+                    {% if h.due_date %}
+                    &nbsp;&nbsp; | &nbsp;&nbsp;
+                    <b>Due:</b> {{ h.due_date }}
+                    {% endif %}
+                </p>
+
+                <div class="actions">
+                    <a href="{{ url_for('homework_bp.teacher_homework_edit',id=h._id) }}">
+                        <button type="button" class="edit">Edit</button>
+                    </a>
+
+                    <a href="{{ url_for('homework_bp.teacher_homework_delete',id=h._id) }}"
+                        onclick="return confirm('Delete this homework?')"> <button type="button"
+                            class="delete">Delete</button> </a>
+
+                </div>
+
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No homework added yet.</p>
+            {% endif %}
+
+        </div>
+
+    </div>
+</body>
+
+</html>

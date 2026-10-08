@@ -46,6 +46,14 @@
             font-size: 18px;
             border-radius: 10px;
         }
+
+        .teacher-info {
+            background: #e8f4ff;
+            border: 1px solid #b6dcff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
     </style>
 
 </head>
@@ -59,44 +67,66 @@
             <small>Mark daily attendance class-wise.</small>
         </div>
 
+        {% if teacher %}
+
+        <div class="teacher-info">
+            👩‍🏫 <b>Teacher:</b> {{ session.get("teacher_name","Teacher") }}
+            &nbsp;&nbsp; | &nbsp;&nbsp;
+            📚 <b>Class:</b> {{ teacher_class }}
+            &nbsp;&nbsp; | &nbsp;&nbsp;
+            🏫 <b>Section:</b> {{ teacher_section }}
+        </div>
+
+        {% endif %}
+
         <div class="row g-3">
 
             <div class="col-md-4">
                 <label>Class</label>
 
-                <select class="form-select" id="class">
+                <select class="form-select" id="class" {% if teacher %}disabled{% endif %}>
+
                     <option value="">Select Class</option>
 
                     {% for c in classes %}
-                    <option value="{{c}}">{{c}}</option>
+                    <option value="{{ c }}" {% if teacher and c==teacher_class %}selected{% endif %}>
+                        {{ c }}
+                    </option>
                     {% endfor %}
 
                 </select>
 
             </div>
+
 
             <div class="col-md-3">
                 <label>Section</label>
 
-                <select class="form-select" id="section">
+                <select class="form-select" id="section" {% if teacher %}disabled{% endif %}>
+
                     <option value="">Select Section</option>
 
                     {% for s in sections %}
-                    <option value="{{s}}">{{s}}</option>
+                    <option value="{{ s }}" {% if teacher and s==teacher_section %}selected{% endif %}>
+                        {{ s }}
+                    </option>
                     {% endfor %}
 
                 </select>
 
             </div>
 
+
             <div class="col-md-3">
                 <label>Date</label>
 
-                <input type="date" id="date" class="form-control" value="{{today}}">
+                <input type="date" id="date" class="form-control" value="{{ today }}">
 
             </div>
 
+
             <div class="col-md-2 d-grid">
+
                 <label>&nbsp;</label>
 
                 <button class="btn btn-primary" onclick="loadStudents()">
@@ -107,14 +137,18 @@
 
         </div>
 
+
         <hr>
 
         <div id="studentList"></div>
 
+
         <div class="mt-3 mb-5">
+
             <button class="btn btn-success save-btn" onclick="saveAttendance()">
                 💾 Save Attendance
             </button>
+
         </div>
 
     </div>
@@ -123,6 +157,25 @@
     <script>
 
         let attendanceData = [];
+
+        const isTeacher = {{ "true" if teacher else "false" }};
+
+
+        // Automatically load teacher's class/section
+        document.addEventListener("DOMContentLoaded", function () {
+
+            if (isTeacher) {
+
+                const cls = document.getElementById("class").value;
+                const sec = document.getElementById("section").value;
+
+                if (cls && sec) {
+                    loadStudents();
+                }
+
+            }
+
+        });
 
 
         // Load Student List
@@ -138,7 +191,7 @@
                 return;
             }
 
-            fetch(`/get_students?class=${cls}&section=${sec}`)
+            fetch(`/get_students?class=${encodeURIComponent(cls)}&section=${encodeURIComponent(sec)}`)
 
                 .then(res => res.json())
 
@@ -146,7 +199,7 @@
 
                     attendanceData = [];
 
-                    fetch(`/load_attendance?class=${cls}&section=${sec}&date=${date}`)
+                    fetch(`/load_attendance?class=${encodeURIComponent(cls)}&section=${encodeURIComponent(sec)}&date=${encodeURIComponent(date)}`)
 
                         .then(res => res.json())
 
@@ -176,35 +229,44 @@
 
                                 html += `
 
-                <div class="student-card">
+                        <div class="student-card">
 
-                    <div class="row align-items-center">
+                            <div class="row align-items-center">
 
-                        <div class="col-2 text-center">
-                            <img src="${photo}" class="student-img">
+                                <div class="col-2 text-center">
+
+                                    <img src="${photo}"
+                                         class="student-img">
+
+                                </div>
+
+
+                                <div class="col-4">
+
+                                    <b>${stu.student_name}</b><br>
+                                    ${stu.adm_code}
+
+                                </div>
+
+
+                                <div class="col-6">
+
+                                    ${radio(index, "P", "Present", "success", status)}
+
+                                    ${radio(index, "A", "Absent", "danger", status)}
+
+                                    ${radio(index, "L", "Leave", "warning", status)}
+
+                                    ${radio(index, "H", "Holiday", "secondary", status)}
+
+                                </div>
+
+                            </div>
+
                         </div>
 
-                        <div class="col-4">
-                            <b>${stu.student_name}</b><br>
-                            ${stu.adm_code}
-                        </div>
+                        `;
 
-                        <div class="col-6">
-
-                            ${radio(index, "P", "Present", "success", status)}
-
-                            ${radio(index, "A", "Absent", "danger", status)}
-
-                            ${radio(index, "L", "Leave", "warning", status)}
-
-                            ${radio(index, "H", "Holiday", "secondary", status)}
-
-                        </div>
-
-                    </div>
-
-                </div>
-                `;
                             });
 
                             document.getElementById("studentList").innerHTML = html;
@@ -221,15 +283,20 @@
         function radio(i, val, label, color, current) {
 
             return `
-<label class="btn btn-outline-${color} btn-sm status-btn">
-<input
-type="radio"
-name="att${i}"
-value="${val}"
-${current == val ? "checked" : ""}
-onchange="attendanceData[${i}].status='${val}'">
-${label}
-</label>`;
+    <label class="btn btn-outline-${color} btn-sm status-btn">
+
+        <input
+            type="radio"
+            name="att${i}"
+            value="${val}"
+            ${current == val ? "checked" : ""}
+            onchange="attendanceData[${i}].status='${val}'">
+
+        ${label}
+
+    </label>
+    `;
+
         }
 
 
@@ -249,6 +316,34 @@ ${label}
 
             };
 
+
+            if (!payload.class || !payload.section) {
+
+                alert("Class and Section are required.");
+
+                return;
+
+            }
+
+
+            if (!payload.date) {
+
+                alert("Date is required.");
+
+                return;
+
+            }
+
+
+            if (!attendanceData.length) {
+
+                alert("Please load students first.");
+
+                return;
+
+            }
+
+
             fetch("/save_attendance", {
 
                 method: "POST",
@@ -266,6 +361,14 @@ ${label}
                 .then(data => {
 
                     alert(data.message);
+
+                })
+
+                .catch(err => {
+
+                    console.error(err);
+
+                    alert("Attendance save failed.");
 
                 });
 

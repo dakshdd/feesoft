@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Teachers & Staff</title>
+
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: #f4f7fb;
+            font-family: Segoe UI, Arial;
+            color: #222
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 15px
+        }
+
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 3px 15px #0001;
+            margin-bottom: 20px
+        }
+
+        .header h2 {
+            margin: 0;
+            color: #1d4ed8
+        }
+
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 3px 15px #0001;
+            margin-bottom: 20px
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #1d4ed8
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px
+        }
+
+        textarea {
+            min-height: 70px
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px
+        }
+
+        .full {
+            grid-column: 1/-1
+        }
+
+        button {
+            border: 0;
+            padding: 10px 18px;
+            border-radius: 8px;
+            background: #1d4ed8;
+            color: white;
+            cursor: pointer;
+            margin-top: 15px
+        }
+
+        .cancel {
+            background: #777
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            font-size: 13px
+        }
+
+        th {
+            background: #eef4ff;
+            color: #1d4ed8
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 15px;
+            background: #dcfce7;
+            color: #166534
+        }
+
+        .badge.inactive {
+            background: #fee2e2;
+            color: #991b1b
+        }
+
+        .action {
+            padding: 6px 10px;
+            margin: 2px;
+            font-size: 12px
+        }
+
+        .edit {
+            background: #f59e0b
+        }
+
+        .delete {
+            background: #dc2626
+        }
+
+        .flash {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background: #dcfce7;
+            color: #166534
+        }
+
+        .table-wrap {
+            overflow-x: auto
+        }
+
+        @media(max-width:800px) {
+            .grid {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        @media(max-width:550px) {
+            .grid {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h2>👨‍🏫 Teachers & Staff Management</h2>
+            <p>Manage all teachers and school staff details</p>
+        </div>
+
+        {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for category,message in messages %}
+
+        <div class="flash">{{message}}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <div class="card">
+
+            <h3>{% if edit %}✏️ Edit Record{% else %}➕ Add Teacher / Staff{% endif %}</h3>
+
+            <form method="POST"
+                action="{% if edit %}{{url_for('teachers_staff_bp.teachers_staff_edit',id=edit._id)}}{% else %}{{url_for('teachers_staff_bp.teachers_staff_add')}}{% endif %}">
+
+                <div class="grid">
+
+                    <div>
+                        <label>Name *</label>
+                        <input name="name" required value="{{edit.name if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Type *</label>
+                        <select name="type">
+                            <option value="Teacher" {% if edit and edit.type=="Teacher" %}selected{% endif %}>Teacher
+                            </option>
+                            <option value="Staff" {% if edit and edit.type=="Staff" %}selected{% endif %}>Staff</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Gender</label>
+                        <select name="gender">
+                            <option value="">Select</option>
+                            <option value="Male" {% if edit and edit.gender=="Male" %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if edit and edit.gender=="Female" %}selected{% endif %}>Female
+                            </option>
+                            <option value="Other" {% if edit and edit.gender=="Other" %}selected{% endif %}>Other
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Mobile</label>
+                        <input name="mobile" value="{{edit.mobile if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Email</label>
+                        <input type="email" name="email" value="{{edit.email if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Qualification</label>
+                        <input name="qualification" value="{{edit.qualification if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Subject</label>
+                        <input name="subject" value="{{edit.subject if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Class</label>
+                        <input name="class" value="{{edit['class'] if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Section</label>
+                        <select name="section">
+                            <option value="">Select</option>
+                            {% for s in ["A","B","C"] %}
+                            <option value="{{s}}" {% if edit and edit.section==s %}selected{% endif %}>{{s}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Joining Date</label>
+                        <input type="date" name="joining_date" value="{{edit.joining_date if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Salary</label>
+                        <input type="number" name="salary" value="{{edit.salary if edit else ''}}">
+                    </div>
+
+                    <div>
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="Active" {% if not edit or edit.status=="Active" %}selected{% endif %}>Active
+                            </option>
+                            <option value="Inactive" {% if edit and edit.status=="Inactive" %}selected{% endif %}>
+                                Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="full">
+                        <label>Address</label>
+                        <textarea name="address">{{edit.address if edit else ''}}</textarea>
+                    </div>
+
+                </div>
+
+                <button type="submit">
+                    {% if edit %}Update Record{% else %}Save Record{% endif %}
+                </button>
+
+                {% if edit %} <a href="{{url_for('teachers_staff_bp.teachers_staff')}}"> <button type="button"
+                        class="cancel">Cancel</button> </a>
+                {% endif %}
+
+            </form>
+        </div>
+
+        <div class="card">
+
+            <h3>👥 Teachers & Staff List</h3>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Mobile</th>
+                            <th>Qualification</th>
+                            <th>Subject</th>
+                            <th>Class</th>
+                            <th>Section</th>
+                            <th>Joining</th>
+                            <th>Salary</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for t in teachers %}
+
+                        <tr>
+
+                            <td><b>{{t.name}}</b></td>
+                            <td>{{t.type}}</td>
+                            <td>{{t.mobile}}</td>
+                            <td>{{t.qualification}}</td>
+                            <td>{{t.subject}}</td>
+                            <td>{{t['class']}}</td>
+                            <td>{{t.section}}</td>
+                            <td>{{t.joining_date}}</td>
+                            <td>₹{{t.salary}}</td>
+
+                            <td>
+                                <span class="badge {% if t.status!='Active' %}inactive{% endif %}">
+                                    {{t.status}}
+                                </span>
+                            </td>
+
+                            <td>
+                                <a href="{{url_for('teachers_staff_bp.teachers_staff_edit',id=t._id)}}">
+                                    <button class="action edit">Edit</button>
+                                </a>
+
+                                <a href="{{url_for('teachers_staff_bp.teachers_staff_delete',id=t._id)}}"
+                                    onclick="return confirm('Delete this record?')"> <button
+                                        class="action delete">Delete</button> </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="11" style="text-align:center;padding:25px">
+                                No Teachers / Staff found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</body>
+
+</html>

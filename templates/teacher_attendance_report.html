@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Teacher Attendance Report</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #222;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976d2, #673ab7);
+            color: white;
+            padding: 20px;
+        }
+
+        .header h2 {
+            margin: 0 0 6px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 15px;
+        }
+
+        .box {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 3px 10px #ddd;
+        }
+
+        .info {
+            background: #eef5ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .filter {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input,
+        button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #198754;
+            color: white;
+            border: 0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        .total {
+            background: #0d6efd;
+        }
+
+        .present {
+            background: #198754;
+        }
+
+        .absent {
+            background: #dc3545;
+        }
+
+        .leave {
+            background: #fd7e14;
+        }
+
+        .stat b {
+            display: block;
+            font-size: 25px;
+            margin-top: 5px;
+        }
+
+        .table-box {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .p {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .a {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .l {
+            color: #fd7e14;
+            font-weight: bold;
+        }
+
+        .message {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 5px;
+            text-decoration: none;
+            background: #2c3e50;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 7px;
+        }
+
+        @media(max-width:700px) {
+            .summary {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filter {
+                display: block;
+            }
+
+            .field {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2>📊 Attendance Report</h2>
+        <div>{{ teacher_name }}</div>
+        <div>
+            Class:
+            <b>{{ teacher_class }}</b>
+            {% if teacher_section %}
+            - <b>{{ teacher_section }}</b>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="box">
+
+            <div class="info">
+                👩‍🏫 {{ teacher_name }}
+                &nbsp; | &nbsp;
+                Class: {{ teacher_class }}
+                {% if teacher_section %}
+                &nbsp; | &nbsp;
+                Section: {{ teacher_section }}
+                {% endif %}
+            </div>
+
+            <form method="GET">
+
+                <div class="filter">
+
+                    <div class="field">
+                        <label>Select Month</label>
+                        <input type="month" name="month" value="{{ month }}" required>
+                    </div>
+
+                    <div class="field">
+                        <button type="submit">
+                            🔍 View Report
+                        </button>
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        {% set total_attendance = report | sum(attribute='total') %}
+        {% set total_present = report | sum(attribute='present') %}
+        {% set total_absent = report | sum(attribute='absent') %}
+        {% set total_leave = report | sum(attribute='leave') %}
+
+        <div class="summary">
+
+            <div class="stat total">
+                Total Attendance
+                <b>{{ total_attendance }}</b>
+            </div>
+
+            <div class="stat present">
+                Present
+                <b>{{ total_present }}</b>
+            </div>
+
+            <div class="stat absent">
+                Absent
+                <b>{{ total_absent }}</b>
+            </div>
+
+            <div class="stat leave">
+                Leave
+                <b>{{ total_leave }}</b>
+            </div>
+
+        </div>
+
+        <div class="box table-box">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Admission Code</th>
+                        <th>Student Name</th>
+                        <th>Total</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Leave</th>
+                        <th>Attendance %</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for student in report %}
+
+                    <tr>
+                        <td>{{ student.adm_code }}</td>
+                        <td>{{ student.student_name }}</td>
+                        <td>{{ student.total }}</td>
+                        <td class="p">{{ student.present }}</td>
+                        <td class="a">{{ student.absent }}</td>
+                        <td class="l">{{ student.leave }}</td>
+                        <td>{{ student.percentage }}%</td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="7" class="message">
+                            No students found.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <a class="back" href="{{ url_for('teacher_login_bp.teacher_dashboard') }}">
+            ← Back to Dashboard
+        </a>
+
+    </div>
+
+</body>
+
+</html>

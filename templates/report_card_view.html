@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Report Card - {{ student.get("student_name","") }}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Arial;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 20px
+        }
+
+        .card {
+            max-width: 850px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border: 1px solid #ddd;
+            border-radius: 10px
+        }
+
+        .school {
+            text-align: center;
+            border-bottom: 2px solid #222;
+            padding-bottom: 12px
+        }
+
+        .school h1 {
+            margin: 0;
+            font-size: 27px
+        }
+
+        .school h2 {
+            margin: 6px 0;
+            font-size: 19px
+        }
+
+        .school p {
+            margin: 3px;
+            font-size: 14px
+        }
+
+        .student {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin: 18px 0
+        }
+
+        .student div {
+            padding: 8px;
+            border: 1px solid #ddd;
+            margin: -1px 0 0 -1px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px
+        }
+
+        th,
+        td {
+            border: 1px solid #333;
+            padding: 9px;
+            text-align: center
+        }
+
+        th {
+            background: #eee
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 18px
+        }
+
+        .summary div {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center
+        }
+
+        .result {
+            text-align: center;
+            font-size: 19px;
+            font-weight: bold;
+            margin: 18px
+        }
+
+        .buttons {
+            text-align: center;
+            margin-top: 20px
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 16px;
+            margin: 4px;
+            color: #fff;
+            background: #1976d2;
+            text-decoration: none;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer
+        }
+
+        .back {
+            background: #555
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0
+            }
+
+            .card {
+                border: 0;
+                padding: 0
+            }
+
+            .buttons {
+                display: none
+            }
+        }
+
+        @media(max-width:600px) {
+
+            .student,
+            .summary {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+
+        <div class="school">
+            <h1>{{ school_name|default("MODERN ERA SCHOOL") }}</h1>
+            {% if school_address %}<p>{{ school_address }}</p>{% endif %}
+            {% if school_phone %}<p>📞 {{ school_phone }}</p>{% endif %}
+            <h2>REPORT CARD</h2><b>{{ exam }}</b>
+        </div>
+
+        <div class="student">
+            <div><b>Admission Code:</b> {{ student.get("adm_code","") }}</div>
+            <div><b>Student Name:</b> {{ student.get("student_name","") }}</div>
+            <div><b>Class:</b> {{ student.get("class","") }}</div>
+            <div><b>Section:</b> {{ student.get("sec",student.get("section","")) }}</div>
+            <div><b>Father Name:</b> {{ student.get("father_name","") }}</div>
+            <div><b>Mother Name:</b> {{ student.get("mother_name","") }}</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Maximum Marks</th>
+                    <th>Marks Obtained</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in marks %}
+                <tr>
+                    <td>{{ row.get("subject","") }}</td>
+                    <td>{{ row.get("max_marks",0) }}</td>
+                    <td>{{ row.get("marks",0) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">No marks entered for this exam.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <div><b>Total</b><br>{{ total }}</div>
+            <div><b>Maximum</b><br>{{ maximum }}</div>
+            <div><b>Percentage</b><br>{{ percentage }}%</div>
+            <div><b>Grade</b><br>{{ grade }}</div>
+        </div>
+
+        <div class="result">Result: {{ result }}</div>
+
+        <div class="buttons">
+            <button class="btn" onclick="window.print()">🖨️ Print Report Card</button>
+            <a class="btn back" href="{{ url_for('report_card_bp.report_card_home') }}">← Back</a>
+        </div>
+
+    </div>
+</body>
+
+</html>

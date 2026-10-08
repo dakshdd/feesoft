@@ -143,7 +143,7 @@ def ledger_home():
             html += f"""
             <tr>
             <td>{r.get('receipt_no', '')}</td>
-            <td>{r.get('month', '')}</td>
+            <td>{r.get('month') or r.get('months') or r.get('selected_month') or r.get('selected_months') or ''}</td>
             <td>{dt}</td>
             <td>{fmt(fee)}</td>
             <td>{fmt(late)}</td>

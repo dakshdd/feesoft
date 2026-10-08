@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Student Marks Entry</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #f4f6fb;
+            color: #222
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976d2, #673ab7);
+            color: white;
+            padding: 20px
+        }
+
+        .header h2 {
+            margin: 0 0 6px
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 15px
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px #ddd
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 7px
+        }
+
+        .save {
+            background: #198754;
+            color: white;
+            border: 0;
+            padding: 11px 18px;
+            border-radius: 7px;
+            cursor: pointer
+        }
+
+        .back {
+            background: #6c757d;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 7px;
+            text-decoration: none
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px
+        }
+
+        th {
+            background: #2c3e50;
+            color: white
+        }
+
+        td input {
+            max-width: 120px
+        }
+
+        .msg {
+            padding: 10px;
+            border-radius: 7px;
+            background: #e8f5e9;
+            margin-bottom: 15px
+        }
+
+        .danger {
+            background: #ffebee
+        }
+
+        @media(max-width:650px) {
+            .grid {
+                grid-template-columns: 1fr
+            }
+
+            table {
+                font-size: 13px
+            }
+
+            th,
+            td {
+                padding: 7px
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2>✏️ Student Marks Entry</h2>
+        <div>{{ teacher_name }}</div>
+        <div>
+            Class:
+            <b>{{ teacher_class }}{% if teacher_section %} - {{ teacher_section }}{% endif %}</b>
+        </div>
+    </div>
+
+    <div class="container">
+
+        {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for message, category in messages %}
+        <div class="msg {% if category=='danger' %}danger{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+
+            <div class="card">
+
+                <div class="grid">
+
+                    <div>
+                        <label>Exam / Assessment</label>
+                        <select name="exam" required>
+                            <option value="">Select Exam</option>
+                            {% for x in ["Unit Test 1","Unit Test 2","Half Yearly","Unit Test 3","Annual Exam"] %}
+                            <option value="{{x}}" {% if exam==x %}selected{% endif %}>
+                                {{x}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Subject</label>
+                        <select name="subject" required>
+                            <option value="">Select Subject</option>
+                            {% for x in ["English","Hindi","Mathematics","Science","Social Science","Computer","General
+                            Knowledge"] %}
+                            <option value="{{x}}" {% if subject==x %}selected{% endif %}>
+                                {{x}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Maximum Marks</label>
+                        <input type="number" name="max_marks" value="{{max_marks}}" min="1" required>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card">
+
+                <h3>Students</h3>
+
+                {% if students %}
+
+                <table>
+                    <tr>
+                        <th>#</th>
+                        <th>Admission Code</th>
+                        <th>Student Name</th>
+                        <th>Marks</th>
+                    </tr>
+
+                    {% for student in students %}
+
+                    {% set adm = student.get('adm_code', student.get('ADM_CODE','')) %}
+
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{adm}}</td>
+                        <td>{{student.get('student_name',student.get('name',''))}}</td>
+                        <td>
+                            <input type="number" name="marks_{{adm}}" value="{{existing.get(adm,'')}}" min="0"
+                                max="{{max_marks}}" step="0.01">
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </table>
+
+                <br>
+
+                <button class="save" type="submit">
+                    💾 Save Marks
+                </button>
+
+                {% else %}
+
+                <p style="text-align:center;color:#777">
+                    No students found for your assigned class and section.
+                </p>
+
+                {% endif %}
+
+            </div>
+
+        </form>
+
+        <a class="back" href="{{url_for('teacher_login_bp.teacher_dashboard')}}">
+            ← Back to Dashboard
+        </a>
+
+    </div>
+
+</body>
+
+</html>

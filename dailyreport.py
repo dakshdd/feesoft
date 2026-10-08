@@ -149,7 +149,7 @@ def daily_report():
 
         cols = [
             "Receipt", "Adm No", "Student",
-            "Class", "Sec", "Month"
+            "Class", "Sec", "Months"
         ]
 
         html = hd + f"""
@@ -181,7 +181,7 @@ def daily_report():
             <td>{r.get('student_name', '')}</td>
             <td>{r.get('class', '')}</td>
             <td>{r.get('section', r.get('sec', ''))}</td>
-            <td>{r.get('month', '')}</td>
+            <td>{r.get('month') or r.get('months') or r.get('selected_month') or r.get('selected_months') or ''}</td>
             """
 
             for key in HEADS:

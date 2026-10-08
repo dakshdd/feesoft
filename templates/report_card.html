@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Report Card</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px
+        }
+
+        .box {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px #ccc
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 20px
+        }
+
+        .form {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+            flex-wrap: wrap
+        }
+
+        .field {
+            flex: 1;
+            min-width: 150px
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px
+        }
+
+        select {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 14px;
+            background: #1976d2;
+            color: #fff;
+            text-decoration: none;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 3px
+        }
+
+        .search {
+            background: #198754
+        }
+
+        .print {
+            background: #2e7d32
+        }
+
+        .back {
+            background: #555
+        }
+
+        .info {
+            text-align: center;
+            color: #555;
+            margin: 18px 0
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px
+        }
+
+        th,
+        td {
+            padding: 9px;
+            border: 1px solid #ddd;
+            text-align: center
+        }
+
+        th {
+            background: #f0f0f0
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 20px
+        }
+
+        @media(max-width:600px) {
+            body {
+                padding: 8px
+            }
+
+            .box {
+                padding: 15px
+            }
+
+            .form {
+                display: block
+            }
+
+            .field {
+                margin-bottom: 10px
+            }
+
+            th,
+            td {
+                font-size: 13px;
+                padding: 7px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+
+        <h1>📋 Report Card</h1>
+
+        {% if session.get("role")=="admin" %}
+
+        <!-- ADMIN: CLASS + SECTION SELECTION -->
+        <form method="GET" action="{{ url_for('report_card_bp.report_card_home') }}">
+            <div class="form">
+
+                <div class="field">
+                    <label>Class</label>
+                    <select name="class" required>
+                        <option value="">Select Class</option>
+                        {% for c in classes %}
+                        <option value="{{ c }}" {% if selected_class==c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Section</label>
+                    <select name="section" required>
+                        <option value="">Select Section</option>
+                        {% for s in sections %}
+                        <option value="{{ s }}" {% if selected_section==s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button class="btn search">🔍 Show Students</button>
+            </div>
+        </form>
+
+        {% else %}
+
+        <!-- TEACHER: SESSION CLASS + SECTION ONLY -->
+        <div class="info">
+            Class: <b>{{ teacher_class }}</b>
+            &nbsp; | &nbsp;
+            Section: <b>{{ teacher_section }}</b>
+        </div>
+
+        {% endif %}
+
+
+        {% if selected_class and selected_section %}
+
+        <div class="info">
+            Class <b>{{ selected_class }}</b> |
+            Section <b>{{ selected_section }}</b>
+        </div>
+
+        {% elif teacher_class and teacher_section %}
+
+        <div class="info">
+            Class <b>{{ teacher_class }}</b> |
+            Section <b>{{ teacher_section }}</b>
+        </div>
+
+        {% endif %}
+
+
+        {% if students %}
+
+        <label><b>Exam</b></label>
+
+        <select id="exam">
+            {% for e in exams %}
+            <option value="{{ e }}">{{ e }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="actions">
+            <button class="btn print" onclick="printAll()">🖨️ Print All</button>
+        </div>
+
+        <table>
+            <tr>
+                <th>Admission Code</th>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th>Action</th>
+            </tr>
+
+            {% for s in students %}
+            <tr>
+                <td>{{ s.get("adm_code","") }}</td>
+                <td>{{ s.get("student_name","") }}</td>
+                <td>{{ s.get("class","") }} - {{ s.get("sec","") }}</td>
+                <td>
+                    <a class="btn" href="{{ url_for('report_card_bp.view_report_card',adm_code=s.get('adm_code')) }}"
+                        onclick="this.href+='?exam='+encodeURIComponent(document.getElementById('exam').value)">
+                        📄 View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+
+        </table>
+
+        {% elif selected_class and selected_section %}
+
+        <p class="info">No students found.</p>
+
+        {% endif %}
+
+
+        <div class="actions">
+
+            {% if session.get("role")=="admin" %}
+            <a class="btn back" href="{{ url_for('dashboard') }}">← Dashboard</a>
+            {% else %}
+            <a class="btn back" href="{{ url_for('teacher_login_bp.teacher_dashboard') }}">← Dashboard</a>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <script>
+        function printAll() {
+            let e = document.getElementById("exam").value;
+            if (!e) { alert("Please select exam"); return }
+
+            let url = "{{ url_for('report_card_bp.print_all_report_cards') }}";
+
+            {% if session.get("role") == "admin" %}
+            url += "?class={{ selected_class|urlencode }}&section={{ selected_section|urlencode }}&exam=" + encodeURIComponent(e);
+            {% else %}
+            url += "?exam=" + encodeURIComponent(e);
+            {% endif %}
+
+            location.href = url;
+        }
+    </script>
+
+</body>
+
+</html>

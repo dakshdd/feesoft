@@ -67,6 +67,10 @@
             font-size: 13px
         }
 
+        .disabled {
+            cursor: default
+        }
+
         .logout {
             display: block;
             text-align: center;
@@ -91,28 +95,58 @@
     <div class="header">
         <h2>👩‍🏫 Teacher Dashboard</h2>
         <div>{{ teacher_name }}</div>
-        <div>Class: <b>{{ teacher_class }} - {{ teacher_section }}</b></div>
+        <div>
+            Class:
+            <b>{{ teacher_class }}{% if teacher_section %} - {{ teacher_section }}{% endif %}</b>
+        </div>
     </div>
 
     <div class="container">
 
         <div class="welcome">
             <b>Welcome, {{ teacher_name }} 👋</b>
-            <div style="margin-top:5px;color:#666">Manage your class attendance</div>
+            <div style="margin-top:5px;color:#666">
+                Manage your class
+            </div>
         </div>
 
         <div class="cards">
 
-            <a href="{{ url_for('attendance_bp.attendance') }}" class="card">
+            <!-- Attendance Entry -->
+            <a href="{{ url_for('attendance_bp.teacher_attendance') }}" class="card">
                 <div class="icon">📋</div>
-                <h3>Mark Attendance</h3>
+                <h3>Attendance Entry</h3>
                 <p>Present / Absent / Leave</p>
             </a>
 
-            <a href="{{ url_for('attendance_bp.attendance_report') }}" class="card">
+            <!-- Attendance Report -->
+            <a href="{{ url_for('attendance_bp.teacher_attendance_report') }}" class="card">
                 <div class="icon">📊</div>
                 <h3>Attendance Report</h3>
                 <p>Monthly attendance</p>
+            </a>
+
+            <!-- Homework -->
+            <a href="{{ url_for('homework_bp.teacher_homework') }}" class="card">
+                <div class="icon">📝</div>
+                <h3>Homework</h3>
+                <p>
+                    Manage homework for
+                    {{ teacher_class }}{% if teacher_section %} - {{ teacher_section }}{% endif %}
+                </p>
+            </a>
+
+            <!-- Student Marks Entry - Future Module -->
+            <!-- Report Card - Future Module -->
+            <a href="{{ url_for('marks_entry_bp.teacher_marks_entry') }}" class="card">
+                <div class="icon">✏️</div>
+                <h3>Student Marks Entry</h3>
+                <p>Enter and manage student marks</p>
+            </a>
+            <a href="{{ url_for('report_card_bp.report_card_home') }}" class="card">
+                <div class="icon">📋</div>
+                <h3>Report Card</h3>
+                <p>View student report cards</p>
             </a>
 
         </div>
@@ -122,6 +156,7 @@
         </a>
 
     </div>
+
 </body>
 
 </html>

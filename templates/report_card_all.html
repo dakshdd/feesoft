@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>All Report Cards - {{ exam }}</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0
+        }
+
+        .card {
+            padding: 25px;
+            max-width: 850px;
+            margin: auto;
+            page-break-after: always
+        }
+
+        .school {
+            text-align: center;
+            border-bottom: 2px solid #222;
+            padding-bottom: 12px
+        }
+
+        .school h1 {
+            margin: 0
+        }
+
+        .school h2 {
+            margin: 6px
+        }
+
+        .student {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin: 18px 0
+        }
+
+        .student div {
+            padding: 8px;
+            border: 1px solid #ddd
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center
+        }
+
+        th {
+            background: #eee
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 18px
+        }
+
+        .summary div {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center
+        }
+
+        .result {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 18px
+        }
+
+        .print {
+            text-align: center;
+            margin: 20px
+        }
+
+        @media print {
+            .print {
+                display: none
+            }
+
+            .card:last-child {
+                page-break-after: auto
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="print">
+        <button onclick="window.print()">🖨️ Print All Report Cards</button>
+    </div>
+
+    {% for c in cards %}
+    <div class="card">
+
+        <div class="school">
+            <h1>MODERN ERA SCHOOL</h1>
+            <h2>REPORT CARD</h2>
+            <b>{{ exam }}</b>
+        </div>
+
+        <div class="student">
+            <div><b>Admission Code:</b> {{ c.student.get("adm_code","") }}</div>
+            <div><b>Student Name:</b> {{ c.student.get("student_name","") }}</div>
+            <div><b>Class:</b> {{ c.student.get("class","") }}</div>
+            <div><b>Section:</b> {{ c.student.get("sec","") }}</div>
+            <div><b>Father Name:</b> {{ c.student.get("father_name","") }}</div>
+            <div><b>Mother Name:</b> {{ c.student.get("mother_name","") }}</div>
+        </div>
+
+        <table>
+            <tr>
+                <th>Subject</th>
+                <th>Maximum Marks</th>
+                <th>Marks Obtained</th>
+            </tr>
+
+            {% for m in c.marks %}
+            <tr>
+                <td>{{ m.get("subject","") }}</td>
+                <td>{{ m.get("max_marks",0) }}</td>
+                <td>{{ m.get("marks",0) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">No marks entered for this exam.</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <div class="summary">
+            <div><b>Total</b><br>{{ c.total }}</div>
+            <div><b>Maximum</b><br>{{ c.maximum }}</div>
+            <div><b>Percentage</b><br>{{ c.percentage }}%</div>
+            <div><b>Grade</b><br>{{ c.grade }}</div>
+        </div>
+
+        <div class="result">Result: {{ c.result }}</div>
+
+    </div>
+    {% endfor %}
+
+</body>
+
+</html>
