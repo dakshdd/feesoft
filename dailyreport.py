@@ -19,22 +19,23 @@ HEADS = {
 CSS = """
 <style>
 body{font-family:Segoe UI;margin:0;background:#f5f7fb;color:#222}
-.container{max-width:98%;margin:15px auto;background:#fff;padding:15px;border-radius:8px;
-box-shadow:0 2px 8px #ddd;overflow:auto}
+.container{max-width:98%;margin:15px auto;background:#fff;padding:15px;
+border-radius:8px;box-shadow:0 2px 8px #ddd;overflow:auto}
 .school{text-align:center;border-bottom:1px solid #ddd;padding-bottom:8px}
 .school h1{margin:0;font-size:22px;color:#2c3e50}
 .school p{margin:2px;color:#666;font-size:12px}
 h2{font-size:18px;color:#2c3e50}
 input{padding:7px;border:1px solid #ccc;border-radius:4px}
-button{padding:7px 12px;border:0;border-radius:4px;background:#1abc9c;color:white;
-cursor:pointer;margin:2px}
-table{border-collapse:collapse;width:100%;margin-top:15px;font-size:12px;white-space:nowrap}
+button{padding:7px 12px;border:0;border-radius:4px;background:#1abc9c;
+color:white;cursor:pointer;margin:2px}
+table{border-collapse:collapse;width:100%;margin-top:15px;
+font-size:12px;white-space:nowrap}
 th,td{border:1px solid #ddd;padding:6px;text-align:center}
 th{background:#2c3e50;color:#fff}
 tr:nth-child(even){background:#fafafa}
 .total{font-weight:bold;background:#d8f5d8!important}
 .cancel{background:#ffd6d6!important;color:#900;font-weight:bold}
-.paid{font-weight:bold}
+.paid{font-weight:bold;color:#087a35}
 </style>
 """
 
@@ -93,6 +94,17 @@ def head_value(r, key):
     return 0
 
 
+def get_late_fee_paid(r):
+    """Use the recorded late-fine collection amount."""
+    for key in ("late_fee_paid", "late_paid", "fine_paid",
+                "late_fee_amount_paid"):
+        if key in r:
+            return num(r[key])
+
+    # Existing transactions use late_fee for the collected fine.
+    return num(r.get("late_fee", 0))
+
+
 @dailyreport_bp.route("/", methods=["GET", "POST"])
 def daily_report():
 
@@ -118,14 +130,12 @@ def daily_report():
             elif typ == "online":
                 q["payment_mode"] = "Online"
 
-            records = list(
-                tran_collection.find(q).sort("date", 1)
-            )
+            records = list(tran_collection.find(q).sort("date", 1))
 
         except Exception as e:
             return render_template_string(
                 LAYOUT, css=CSS,
-                content=hd+f"<h2>Error: {e}</h2>"
+                content=hd + f"<h2>Error: {e}</h2>"
             )
 
         if not records:
@@ -185,32 +195,24 @@ def daily_report():
             """
 
             for key in HEADS:
-
                 v = head_value(r, key)
                 row_fee += v
-
                 html += f"<td>{fmt(v)}</td>"
 
                 if not cancelled:
                     totals[key] += v
 
-            late = num(r.get("late_fee", 0))
+            late = get_late_fee_paid(r)
 
-            # ONLY PAID AMOUNT
-            paid = num(r.get("paid_amount", 0))
-
-            # fallback only for old records
+            fee_paid = num(r.get("paid_amount", 0))
             if "paid_amount" not in r:
-                paid = num(r.get("amount_paid", r.get("paid", 0)))
+                fee_paid = num(r.get("amount_paid", r.get("paid", 0)))
+
+            # Fee payment + collected late fine
+            paid = fee_paid + late
 
             fee = num(r.get("month_total", row_fee))
-
-            balance = num(
-                r.get(
-                    "balance_amount",
-                    r.get("balance", 0)
-                )
-            )
+            balance = num(r.get("balance_amount", r.get("balance", 0)))
 
             html += f"""
             <td><b>{fmt(fee)}</b></td>
@@ -230,10 +232,7 @@ def daily_report():
         html += f"""
         <tr class="total">
             <td colspan="6">NET TOTAL</td>
-            {''.join(
-            f'<td>{fmt(totals[k])}</td>'
-            for k in HEADS
-        )}
+            {''.join(f'<td>{fmt(totals[k])}</td>' for k in HEADS)}
             <td>{fmt(fee_total)}</td>
             <td>{fmt(late_total)}</td>
             <td>{fmt(paid_total)}</td>
@@ -243,27 +242,17 @@ def daily_report():
         </table>
         """
 
-        return render_template_string(
-            LAYOUT,
-            css=CSS,
-            content=html
-        )
+        return render_template_string(LAYOUT, css=CSS, content=html)
 
     form = hd + """
     <h2>📅 Datewise Daily Report</h2>
-
     <form method="POST">
         <label><b>Date:</b></label>
         <input type="date" name="report_date" required>
-
         <button name="report_type" value="cash">Cash</button>
         <button name="report_type" value="online">Online</button>
         <button name="report_type" value="combined">Combined</button>
     </form>
     """
 
-    return render_template_string(
-        LAYOUT,
-        css=CSS,
-        content=form
-    )
+    return render_template_string(LAYOUT, css=CSS, content=form)
