@@ -26,6 +26,7 @@ from teacher_login import teacher_login_bp
 from attendance import attendance_bp
 from homework import homework_bp
 from teachers_staff import teachers_staff_bp
+from tc_issue import tc_issue_bp
 # from marks_entry import marks_entry_bp
 
 
@@ -260,6 +261,7 @@ app.register_blueprint(teacher_login_bp)
 app.register_blueprint(attendance_bp)
 app.register_blueprint(homework_bp)
 app.register_blueprint(teachers_staff_bp)
+app.register_blueprint(tc_issue_bp, url_prefix="/tc")
 # app.register_blueprint(marks_entry_bp)
 
 

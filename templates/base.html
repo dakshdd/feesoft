@@ -146,9 +146,12 @@
                         </li>
 
                         <li>
-                            <a class="nav-link text-white" href="#" target="contentFrame">📚 Syllabus</a>
+                            <a class="nav-link text-white"
+                                href="{{ url_for('static', filename='images/SYLLAYBUS-1st.jpg') }}"
+                                target="contentFrame">
+                                📚 Syllabus
+                            </a>
                         </li>
-
                         <li>
                             <a class="nav-link text-white" href="{{ url_for('homework_bp.homework_home') }}"
                                 target="contentFrame">
@@ -188,10 +191,10 @@
                                 👨‍🏫 Teachers & Staff
                             </a>
                         </li>
-
                         <li>
-                            <a class="nav-link text-white" href="#" target="contentFrame">
-                                📈 Performance Reports
+                            <a class="nav-link text-white" href="{{ url_for('tc_issue_bp.tc_home') }}"
+                                target="contentFrame">
+                                📄 TC ISSUE
                             </a>
                         </li>
 
