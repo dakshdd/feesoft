@@ -1,6 +1,12 @@
-let student = null, monthData = {}, timer = null, monthsLoading = false;
 
-const months = ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"];
+let student = null, monthData = {}, timer = null;
+let studentRequestId = 0, searchRequestId = 0;
+
+const months = [
+    "April", "May", "June", "July", "August", "September",
+    "October", "November", "December", "January", "February", "March"
+];
+
 const $ = id => document.getElementById(id);
 
 const searchBox = $("searchBox"),
@@ -17,17 +23,34 @@ const searchBox = $("searchBox"),
     saveBtn = $("saveBtn");
 
 
+/* RESET */
+function resetStudent() {
+    student = null;
+    monthData = {};
+
+    details.innerHTML = "";
+    monthsDiv.innerHTML = "";
+    monthBox.style.display = "none";
+
+    amountEl.value = "";
+    paidAmountEl.value = "";
+    balanceAmountEl.value = "";
+    lateFeeEl.value = 0;
+    totalEl.textContent = "0.00";
+    balanceEl.textContent = "0.00";
+}
+
+
 /* SEARCH */
 searchBox.addEventListener("input", function () {
     clearTimeout(timer);
 
     const q = this.value.trim();
+    const requestId = ++searchRequestId;
+
+    ++studentRequestId;
+    resetStudent();
     studentList.innerHTML = "";
-    details.innerHTML = "";
-    monthsDiv.innerHTML = "";
-    monthBox.style.display = "none";
-    student = null;
-    monthData = {};
 
     if (!q) return;
 
@@ -39,6 +62,9 @@ searchBox.addEventListener("input", function () {
             );
 
             const data = await r.json();
+
+            if (requestId !== searchRequestId) return;
+
             studentList.innerHTML = "";
 
             if (!data.length) {
@@ -52,7 +78,9 @@ searchBox.addEventListener("input", function () {
             data.forEach(s => {
                 const o = document.createElement("option");
                 o.value = s.adm_code;
-                o.textContent = `${s.student_name} | ${s.adm_code} | Class ${s.class || ""}`;
+                o.textContent =
+                    `${s.student_name} | ${s.adm_code} | Class ${s.class || ""}`;
+
                 studentList.appendChild(o);
             });
 
@@ -60,18 +88,27 @@ searchBox.addEventListener("input", function () {
             await loadStudent();
 
         } catch (e) {
-            console.error(e);
+            console.error("Search error:", e);
         }
     }, 200);
 });
 
+
 studentList.addEventListener("change", loadStudent);
 
 
-/* STUDENT */
+/* STUDENT LOAD */
 async function loadStudent() {
     const adm = studentList.value;
     if (!adm) return;
+
+    const requestId = ++studentRequestId;
+
+    student = null;
+    monthData = {};
+    details.innerHTML = "";
+    monthsDiv.innerHTML = "";
+    monthBox.style.display = "none";
 
     try {
         const r = await fetch(
@@ -80,98 +117,114 @@ async function loadStudent() {
         );
 
         const d = await r.json();
+
+        // Ignore previous student response
+        if (requestId !== studentRequestId) return;
+
         if (!d.adm_code) return;
 
         student = d;
 
         details.innerHTML = `
         <div class="info">
-        <b>Name:</b> ${d.student_name}<br>
-        <b>Admission:</b> ${d.adm_code}<br>
-        <b>Class:</b> ${d.class || ""}${d.section ? " - " + d.section : ""}<br>
-        <b>Father:</b> ${d.father_name || ""}<br>
-        <b>Total Fee:</b> ₹${Number(d.total_fee || 0).toFixed(2)}<br>
-        <b>Paid:</b> ₹${Number(d.paid_fee || 0).toFixed(2)}<br>
-        <b>Balance:</b> ₹${Number(d.balance_fee || 0).toFixed(2)}
+            <b>Name:</b> ${d.student_name}<br>
+            <b>Admission:</b> ${d.adm_code}<br>
+            <b>Class:</b> ${d.class || ""} ${d.section || ""}<br>
+            <b>Father:</b> ${d.father_name || ""}<br>
+            <b>Total Fee:</b> ₹${Number(d.total_fee || 0).toFixed(2)}<br>
+            <b>Paid:</b> ₹${Number(d.paid_fee || 0).toFixed(2)}<br>
+            <b>Balance:</b> ₹${Number(d.balance_fee || 0).toFixed(2)}
         </div>`;
 
-        balanceEl.textContent = Number(d.balance_fee || 0).toFixed(2);
+        balanceEl.textContent =
+            Number(d.balance_fee || 0).toFixed(2);
+
         amountEl.value = "";
         paidAmountEl.value = "";
         balanceAmountEl.value = "";
         lateFeeEl.value = 0;
 
-        await loadMonths();
-        monthBox.style.display = "block";
+        await loadMonths(adm, requestId);
 
     } catch (e) {
-        console.error(e);
+        if (e.name !== "AbortError")
+            console.error("Student loading error:", e);
     }
 }
 
 
-/* MONTHS - SINGLE LOAD ONLY */
-async function loadMonths() {
-
-    if (monthsLoading) return;
-    monthsLoading = true;
-
+/* BULK MONTH LOADING - ONLY ONE API REQUEST */
+async function loadMonths(adm, requestId) {
     try {
+        const r = await fetch(
+            FEE_URLS.months + "?adm_code=" + encodeURIComponent(adm),
+            { cache: "no-store" }
+        );
+
+        const data = await r.json();
+
+        // Important: Never show old student's months
+        if (requestId !== studentRequestId) return;
+        if (!student || student.adm_code !== adm) return;
+
+        if (!data.months) {
+            throw new Error(data.error || "Months not found");
+        }
+
+        monthData = data.months;
         monthsDiv.innerHTML = "";
-        monthData = {};
 
-        for (const month of months) {
-
-            const r = await fetch(
-                FEE_URLS.monthTotal +
-                "?adm_code=" + encodeURIComponent(student.adm_code) +
-                "&month=" + encodeURIComponent(month),
-                { cache: "no-store" }
-            );
-
-            const d = await r.json();
-            if (d.error) continue;
-
-            monthData[month] = d;
+        months.forEach(month => {
+            const d = monthData[month];
+            if (!d) return;
 
             const paid = Number(d.balance || 0) <= 0;
 
             const div = document.createElement("div");
+
             div.className = "month" + (paid ? " paid" : "");
 
             div.innerHTML = `
-            <label>
-                <input type="checkbox" value="${month}" ${paid ? "disabled" : ""}>
-                <b>${month}</b><br>
-                <span class="amount">
-                    ₹${Number(d.balance || 0).toFixed(2)}
-                </span>
-                ${paid ? " - PAID" : d.status === "Partial" ? " - PARTIAL" : ""}
-            </label>`;
+                <label>
+                    <input type="checkbox"
+                        value="${month}"
+                        ${paid ? "disabled" : ""}>
+                    <b>${month}</b><br>
+
+                    <span class="amount">
+                        ₹${Number(d.balance || 0).toFixed(2)}
+                    </span>
+
+                    ${paid ? " - PAID" :
+                    d.status === "Partial" ? " - PARTIAL" : ""}
+                </label>
+            `;
 
             const cb = div.querySelector("input");
-            if (cb) cb.addEventListener("change", calculateTotal);
+            cb.addEventListener("change", calculateTotal);
 
             div.querySelector(".amount").addEventListener(
-                "click",
-                () => showMonthDetails(month)
+                "click", () => showMonthDetails(month)
             );
 
             monthsDiv.appendChild(div);
-        }
+        });
+
+        if (requestId !== studentRequestId) return;
+
+        monthBox.style.display = "block";
 
     } catch (e) {
         console.error("Month loading error:", e);
-    } finally {
-        monthsLoading = false;
     }
 }
 
 
 /* SELECTED MONTHS */
 function selectedMonths() {
-    return [...monthsDiv.querySelectorAll("input[type=checkbox]:checked")]
-        .map(x => x.value);
+    return [...monthsDiv.querySelectorAll(
+        "input[type=checkbox]:checked"
+    )].map(x => x.value);
 }
 
 
@@ -191,8 +244,7 @@ function calculateTotal() {
 
     updateBalance();
 
-    totalEl.textContent =
-        "Selected Total: ₹" + total.toFixed(2);
+    totalEl.textContent = total.toFixed(2);
 
     calculateLateFee();
 }
@@ -210,13 +262,12 @@ function updateBalance() {
 paidAmountEl.addEventListener("input", updateBalance);
 
 
-/* LATE FEE */
+/* LATE FEE - ₹5 PER DAY AFTER 10TH */
 function calculateLateFee() {
     let fine = 0;
     const today = new Date();
 
     selectedMonths().forEach(month => {
-
         const i = months.indexOf(month);
         if (i < 0) return;
 
@@ -228,8 +279,11 @@ function calculateLateFee() {
 
         const due = new Date(year, monthNo - 1, 10);
 
-        if (today > due)
-            fine += Math.floor((today - due) / 86400000) * 5;
+        if (today > due) {
+            fine += Math.floor(
+                (today - due) / 86400000
+            ) * 5;
+        }
     });
 
     lateFeeEl.value = Math.max(fine, 0);
@@ -261,12 +315,13 @@ STATUS          : ${d.status || "Unpaid"}`);
 }
 
 
-/* SAVE */
+/* SAVE PAYMENT */
 saveBtn.addEventListener("click", async function () {
 
     if (!student)
         return alert("Please select student");
 
+    const selectedStudent = student;
     const selected = selectedMonths();
 
     if (!selected.length)
@@ -279,27 +334,22 @@ saveBtn.addEventListener("click", async function () {
         return alert("Please enter Paid Amount");
 
     if (paid > total)
-        return alert("Paid Amount cannot be greater than Amount Paid.");
+        return alert("Paid Amount cannot be greater than Amount Due.");
 
-    const studentBalance =
-        Number(student.balance_fee || 0);
-
-    if (paid > studentBalance)
+    if (paid > Number(selectedStudent.balance_fee || 0))
         return alert("Paid Amount cannot be greater than student balance.");
 
-    const lateFee =
-        Math.max(Number(lateFeeEl.value || 0), 0);
+    const lateFee = Math.max(Number(lateFeeEl.value || 0), 0);
 
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving...";
 
     try {
-
         const r = await fetch(FEE_URLS.pay, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                adm_code: student.adm_code,
+                adm_code: selectedStudent.adm_code,
                 months: selected,
                 amount: paid,
                 late_fee: lateFee,
@@ -312,24 +362,21 @@ saveBtn.addEventListener("click", async function () {
 
         if (!data.success) {
             alert(data.error || "Payment failed");
-            saveBtn.disabled = false;
-            saveBtn.textContent = "Save Payment";
             return;
         }
 
         sessionStorage.setItem(
-            "fee_saved_" + student.adm_code,
+            "fee_saved_" + selectedStudent.adm_code,
             data.receipt_no
         );
 
         location.href = data.receipt_url;
 
     } catch (e) {
-
         console.error(e);
-
         alert("Server error. Please check payment before trying again.");
 
+    } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Save Payment";
     }

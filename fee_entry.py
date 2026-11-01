@@ -65,17 +65,31 @@ def money(v):
         return 0.0
 
 
-def month_paid(adm, m):
-    n = 0
-    for t in tran_collection.find({"adm_code": adm}, {"month": 1, "months": 1, "month_details": 1, "paid": 1, "paid_amount": 1}):
-        md = t.get("month_details", {})
-        if m in md:
-            n += money(md[m].get("paid", 0))
-        elif t.get("month") == m:
-            n += money(t.get("paid_amount", t.get("paid", 0)))
-        elif m in t.get("months", []) and not md:
-            n += money(t.get("paid_amount", t.get("paid", 0)))
-    return round(n, 2)
+def month_paid_map(adm):
+    """Read a student's transactions once and calculate paid amount per month."""
+    result = {m: 0.0 for m in MONTHS}
+    projection = {
+        "month": 1, "months": 1, "month_details": 1,
+        "paid": 1, "paid_amount": 1
+    }
+
+    for t in tran_collection.find({"adm_code": adm}, projection):
+        md = t.get("month_details") or {}
+
+        for m in MONTHS:
+            if m in md:
+                result[m] += money(md[m].get("paid", 0))
+            elif t.get("month") == m:
+                result[m] += money(t.get("paid_amount", t.get("paid", 0)))
+            elif m in (t.get("months") or []) and not md:
+                result[m] += money(t.get("paid_amount", t.get("paid", 0)))
+
+    return {m: round(v, 2) for m, v in result.items()}
+
+
+def month_paid(adm, m, paid_map=None):
+    paid_map = paid_map if paid_map is not None else month_paid_map(adm)
+    return paid_map.get(m, 0.0)
 
 
 def month_head_paid(adm, m):
@@ -111,11 +125,17 @@ def month_detail(s, m):
     return d
 
 
-def paid_months(adm):
-    s = master_col.find_one({"adm_code": adm})
+def paid_months(adm, s=None, paid_map=None):
+    s = s or master_col.find_one({"adm_code": adm})
     if not s:
         return set()
-    return {m for m in MONTHS if month_detail(s, m)["total"] > 0 and month_paid(adm, m) >= month_detail(s, m)["total"]}
+
+    paid_map = paid_map if paid_map is not None else month_paid_map(adm)
+    return {
+        m for m in MONTHS
+        if month_detail(s, m)["total"] > 0
+        and paid_map[m] >= month_detail(s, m)["total"]
+    }
 
 
 def next_unpaid_month(adm):
@@ -180,10 +200,11 @@ def save_payment(adm, months, amount, mode, remark, late_fee_value=None):
 
     details = {}
     heads_total = {h: 0.0 for h in HEADS}
+    paid_map = month_paid_map(adm)
 
     for m in months:
         original = month_detail(s, m)
-        already = month_paid(adm, m)
+        already = paid_map.get(m, 0.0)
         outstanding = round(max(original["total"] - already, 0), 2)
 
         if outstanding <= 0:
@@ -469,11 +490,52 @@ def student_details():
     s = master_col.find_one({"adm_code": adm})
     if not s:
         return jsonify({})
-    return jsonify({"adm_code": adm, "student_name": s.get("student_name", ""), "class": s.get("class", ""),
-                    "section": s.get("section", s.get("sec", "")), "father_name": s.get("father_name", ""),
-                    "total_fee": money(s.get("total_fee")), "paid_fee": money(s.get("paid_fee")),
-                    "balance_fee": money(s.get("balance_fee", s.get("total_fee", 0))),
-                    "paid_months": list(paid_months(adm)), "months": MONTHS})
+
+    paid_map = month_paid_map(adm)
+    return jsonify({
+        "adm_code": adm,
+        "student_name": s.get("student_name", ""),
+        "class": s.get("class", ""),
+        "section": s.get("section", s.get("sec", "")),
+        "father_name": s.get("father_name", ""),
+        "total_fee": money(s.get("total_fee")),
+        "paid_fee": money(s.get("paid_fee")),
+        "balance_fee": money(s.get("balance_fee", s.get("total_fee", 0))),
+        "paid_months": list(paid_months(adm, s, paid_map)),
+        "months": MONTHS
+    })
+
+
+@fee_entry_bp.route("/months")
+def all_months():
+    """Return April-March fee status in one request for the selected student."""
+    adm = request.args.get("adm_code", "").strip()
+    s = master_col.find_one({"adm_code": adm})
+    if not s:
+        return jsonify({"error": "Student not found"}), 404
+
+    paid_map = month_paid_map(adm)
+    result = {}
+
+    for m in MONTHS:
+        d = month_detail(s, m)
+        paid = paid_map.get(m, 0.0)
+        balance = round(max(d["total"] - paid, 0), 2)
+        result[m] = {
+            "month": m,
+            "total": d["total"],
+            "paid": paid,
+            "balance": balance,
+            "already_paid": balance <= 0,
+            "status": (
+                "Paid" if balance <= 0
+                else "Partial" if paid > 0
+                else "Unpaid"
+            ),
+            **{k: d[k] for k in HEADS}
+        }
+
+    return jsonify({"months": result})
 
 
 @fee_entry_bp.route("/month_total")
@@ -580,12 +642,13 @@ def api_details(adm_code):
     s = master_col.find_one({"adm_code": adm_code})
     if not s:
         return jsonify({})
+    paid_map = month_paid_map(adm_code)
     return jsonify({"adm_code": adm_code, "student_name": s.get("student_name", ""),
                     "class": s.get("class", ""), "section": s.get("section", s.get("sec", "")),
                     "father_name": s.get("father_name", ""), "total_fee": money(s.get("total_fee")),
                     "paid_fee": money(s.get("paid_fee")),
                     "balance_fee": money(s.get("balance_fee", s.get("total_fee", 0))),
-                    "paid_months": list(paid_months(adm_code)), "months": MONTHS,
+                    "paid_months": list(paid_months(adm_code, s, paid_map)), "months": MONTHS,
                     "head_paid": {h: money(s.get(f"{h}_paid", 0)) for h in HEADS}})
 
 
