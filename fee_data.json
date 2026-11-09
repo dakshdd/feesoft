@@ -48,5 +48,10 @@
     "admission": 0.0,
     "annual": 0.0,
     "tuition": 3000.0
+  },
+  "10th": {
+    "admission": 1000.0,
+    "annual": 2000.0,
+    "tuition": 2000.0
   }
 }

@@ -1,98 +1,100 @@
+
 import os
-from flask import Flask, render_template, request, redirect, url_for, session
-from werkzeug.security import check_password_hash
-from datetime import timedelta
+import json
+
+from flask import Blueprint, render_template, request
+from werkzeug.security import generate_password_hash
 
 from db import users_collection
 
+create_user_bp = Blueprint("create_user_bp", __name__)
 
-app = Flask(__name__)
-
-# Use Render Environment Variable
-app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")
-app.permanent_session_lifetime = timedelta(minutes=30)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-@app.route("/", methods=["GET", "POST"])
-def login():
+def load_fee_data():
+    file_path = os.path.join(BASE_DIR, "fee_data.json")
+
+    print("FEE JSON PATH:", file_path)
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if not isinstance(data, dict):
+            return {}
+
+        print("CLASSES LOADED:", list(data.keys()))
+        return data
+
+    except Exception as e:
+        print("FEE DATA ERROR:", str(e))
+        return {}
+
+
+@create_user_bp.route("/create_user", methods=["GET", "POST"])
+def create_user():
+
+    fee_data = load_fee_data()
+    classes = list(fee_data.keys())
+
+    error = None
+    success = None
 
     if request.method == "POST":
 
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+        role = request.form.get("role", "").strip()
+        class_id = request.form.get("class_id", "").strip()
+        sec_id = request.form.get("sec_id", "").strip()
+        adm_code = request.form.get("adm_code", "").strip()
 
-        # Find user from school_db.users
-        user = users_collection.find_one({
-            "username": username
-        })
+        if not username or not password:
+            error = "Username and password required!"
 
-        if user:
-            print(f"✅ User found: {username}")
+        elif role not in ["admin", "teacher", "parent", "clerk"]:
+            error = "Invalid role!"
+
+        elif role == "teacher" and class_id not in fee_data:
+            error = "Please select a valid class!"
+
+        elif role == "teacher" and sec_id not in ["A", "B", "C"]:
+            error = "Please select a valid section!"
+
+        elif role == "parent" and not adm_code:
+            error = "Admission Code required!"
+
+        elif users_collection.find_one({
+            "username": {"$regex": f"^{username}$", "$options": "i"}
+        }):
+            error = "Username already exists!"
+
         else:
-            print(f"❌ User not found: {username}")
 
-        # Check password
-        if user and check_password_hash(
-            user.get("password_hash", ""),
-            password
-        ):
+            user = {
+                "username": username,
+                "password_hash": generate_password_hash(password),
+                "role": role
+            }
 
-            session.permanent = True
-            session["username"] = username
-            session["role"] = user.get("role", "")
-
-            role = user.get("role")
-
-            # Role-based redirect
-            if role == "admin":
-                return redirect(url_for("admin_dashboard"))
-
-            elif role == "teacher":
-                return redirect(url_for("teacher_dashboard"))
+            if role == "teacher":
+                user.update({
+                    "class_id": class_id,
+                    "sec_id": sec_id
+                })
 
             elif role == "parent":
-                return redirect(url_for("parent_dashboard"))
+                user["adm_code"] = adm_code
 
-            elif role == "clerk":
-                return redirect(url_for("clerk_dashboard"))
+            users_collection.insert_one(user)
 
-            else:
-                return "❌ Unknown role"
+            success = "User created successfully!"
 
-        else:
-            return render_template(
-                "login.html",
-                error="Invalid credentials"
-            )
-
-    return render_template("login.html")
-
-
-@app.route("/admin")
-def admin_dashboard():
-    return render_template("admin_dashboard.html")
-
-
-@app.route("/teacher")
-def teacher_dashboard():
-    return render_template("teacher_dashboard.html")
-
-
-@app.route("/parent")
-def parent_dashboard():
-    return render_template("parent_dashboard.html")
-
-
-@app.route("/clerk")
-def clerk_dashboard():
-    return render_template("clerk_dashboard.html")
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    return render_template(
+        "create_user.html",
+        fee_data=fee_data,
+        classes=classes,
+        error=error,
+        success=success
+    )

@@ -1,4 +1,7 @@
+
 import os
+import json
+
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
@@ -27,12 +30,32 @@ from attendance import attendance_bp
 from homework import homework_bp
 from teachers_staff import teachers_staff_bp
 from tc_issue import tc_issue_bp
-# from marks_entry import marks_entry_bp
 
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
+
+
+# ================= FEE DATA =================
+def load_fee_data():
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "fee_data.json"
+    )
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if isinstance(data, dict):
+            return data
+
+        return {}
+
+    except Exception as e:
+        print("FEE DATA ERROR:", e)
+        return {}
 
 
 # ================= LOGIN =================
@@ -64,7 +87,6 @@ def login():
 
                 role = user.get("role", "user")
 
-                # ================= TEACHER =================
                 if role == "teacher":
 
                     session["user"] = user.get("username", username)
@@ -82,12 +104,9 @@ def login():
                     )
 
                     return redirect(
-                        url_for(
-                            "teacher_login_bp.teacher_dashboard"
-                        )
+                        url_for("teacher_login_bp.teacher_dashboard")
                     )
 
-                # ================= ADMIN / OTHER USER =================
                 session["user"] = user.get("username", username)
                 session["role"] = role
 
@@ -100,9 +119,8 @@ def login():
 
     return render_template("login.html")
 
+
 # ================= ADMIN DASHBOARD =================
-
-
 @app.route("/dashboard")
 def dashboard():
 
@@ -137,12 +155,17 @@ def home():
         "doa": {"$regex": r"^\d{2}-\d{2}-2026$"}
     })
 
-    male_percent = round(male_count*100/total_students,
-                         1) if total_students else 0
-    female_percent = round(female_count*100/total_students,
-                           1) if total_students else 0
+    male_percent = round(
+        male_count * 100 / total_students, 1
+    ) if total_students else 0
+
+    female_percent = round(
+        female_count * 100 / total_students, 1
+    ) if total_students else 0
+
     new_admissions_percent = round(
-        new_admissions*100/total_students, 1) if total_students else 0
+        new_admissions * 100 / total_students, 1
+    ) if total_students else 0
 
     return render_template(
         "welcome.html",
@@ -172,18 +195,31 @@ def create_user():
     if "user" not in session or session.get("role") != "admin":
         return redirect(url_for("login"))
 
+    fee_data = load_fee_data()
+    classes = list(fee_data.keys())
+
     if request.method == "POST":
 
-        username = request.form["username"].strip()
-        password = request.form["password"]
-        role = request.form["role"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        role = request.form.get("role", "")
+
+        if not username or not password:
+            return render_template(
+                "create_user.html",
+                error="Username and password required!",
+                fee_data=fee_data,
+                classes=classes
+            )
 
         if users_collection.find_one({
             "username": {"$regex": f"^{username}$", "$options": "i"}
         }):
             return render_template(
                 "create_user.html",
-                error="⚠ User already exists!"
+                error="⚠ User already exists!",
+                fee_data=fee_data,
+                classes=classes
             )
 
         doc = {
@@ -193,19 +229,33 @@ def create_user():
         }
 
         if role == "teacher":
-            doc["class_id"] = request.form.get("class_id")
 
-        if role == "parent":
-            doc["adm_code"] = request.form.get("adm_code")
+            class_id = request.form.get("class_id", "").strip()
+            sec_id = request.form.get("sec_id", "").strip()
+
+            doc["class_id"] = class_id
+            doc["sec_id"] = sec_id
+
+        elif role == "parent":
+
+            doc["adm_code"] = request.form.get(
+                "adm_code", ""
+            ).strip()
 
         users_collection.insert_one(doc)
 
         return render_template(
             "create_user.html",
-            success=f"✅ User '{username}' created successfully!"
+            success=f"✅ User '{username}' created successfully!",
+            fee_data=fee_data,
+            classes=classes
         )
 
-    return render_template("create_user.html")
+    return render_template(
+        "create_user.html",
+        fee_data=fee_data,
+        classes=classes
+    )
 
 
 # ================= RESET PASSWORD =================
@@ -220,7 +270,9 @@ def reset_password():
         adm_code = request.form.get("adm_code")
         new_password = request.form.get("new_password")
 
-        student = master_collection.find_one({"adm_code": adm_code})
+        student = master_collection.find_one({
+            "adm_code": adm_code
+        })
 
         if not student:
             return render_template(
@@ -262,7 +314,6 @@ app.register_blueprint(attendance_bp)
 app.register_blueprint(homework_bp)
 app.register_blueprint(teachers_staff_bp)
 app.register_blueprint(tc_issue_bp, url_prefix="/tc")
-# app.register_blueprint(marks_entry_bp)
 
 
 if __name__ == "__main__":
